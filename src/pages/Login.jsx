@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from '../hooks/useAuth';
 import { Eye, EyeOff, Phone, Lock, GraduationCap, ChevronDown } from "lucide-react"
@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import heroImg from "/tallaam_logo.png"
 import { countries } from "../data/countriesPhone"
-import { login } from "../api/api"
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
@@ -18,15 +17,23 @@ export default function Login() {
   })
   const [showCountryDropdown, setShowCountryDropdown] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const { login, loading } = useAuth();
+  const { login, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate()
+  const location = useLocation();
+
+  // منع المستخدمين المسجلين من الوصول إلى صفحة تسجيل الدخول
+  useEffect(() => {
+    if (isAuthenticated) {
+      const from = location.state?.from?.pathname || "/dashboard";
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location]);
 
   const [formData, setFormData] = useState({
     phone: "",
     password: ""
   })
   const [error, setError] = useState('');
-  const location = useLocation();
   const from = location.state?.from?.pathname || "/dashboard";
 
   const handleSubmit = async (e) => {
@@ -152,8 +159,7 @@ export default function Login() {
                       variant="ghost"
                       size="icon"
                       disabled={loading}
-                      className={buttonClasses}
-                      // className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                      className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-accent"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

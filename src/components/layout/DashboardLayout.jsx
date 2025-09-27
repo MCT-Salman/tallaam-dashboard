@@ -20,7 +20,7 @@ export function DashboardLayout({ children }) {
         className={cn(
           "flex-1 flex flex-col transition-all duration-300",
           "sm:mt-20 lg:mt-0",
-          sidebarCollapsed ? "lg:mr-16 md:mr-16 sm:mr-0" : "lg:mr-64 md:mr-64 sm:mr-0"
+          sidebarCollapsed ? "lg:mr-24 md:mr-24 sm:mr-0" : "lg:mr-64 md:mr-64 sm:mr-0"
         )}
       >
         <Header sidebarCollapsed={sidebarCollapsed} />

@@ -5,6 +5,10 @@ import {  LogOut, X, ChevronUp, ChevronDown} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { sidebarItems, mainItems } from "@/data/sidebarItems"
+import { LogoutButton } from "@/components/auth/LogoutButton"
+import { useAuth } from "@/hooks/useAuth"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { toast } from "sonner"
 
 // إضافة الـ CSS للمحتوى الرئيسي في الشاشات الصغيرة
 const styles = `
@@ -36,6 +40,24 @@ export function Sidebar({ collapsed, onToggle }) {
   const location = useLocation()
   const [mobileExpanded, setMobileExpanded] = useState(false)
   const navigate = useNavigate()
+  const { logout } = useAuth()
+
+  const handleLogout = () => {
+    // عرض رسالة تأكيد
+    toast("هل أنت متأكد من تسجيل الخروج؟", {
+      action: {
+        label: "تسجيل الخروج",
+        onClick: () => {
+          logout()
+          navigate("/login")
+        },
+      },
+      cancel: {
+        label: "إلغاء",
+        onClick: () => {},
+      },
+    })
+  }
 
   // إضافة class للـ body في الشاشات الصغيرة لإضافة padding-bottom
   useEffect(() => {
@@ -71,24 +93,28 @@ export function Sidebar({ collapsed, onToggle }) {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const logout = () =>{
-    navigate('/login')
-  } 
-
   return (
-    <>
-      {/* Desktop Sidebar */}
-      <div
-        className={cn(
-          "bg-card border-l border-border transition-all duration-300 flex flex-col fixed top-0 right-0 h-screen z-50",
-          "hidden md:flex", // إخفاء في الشاشات الصغيرة
-          collapsed ? "w-16" : "w-64"
-        )}
-      >
+    <TooltipProvider>
+      <>
+        {/* Desktop Sidebar */}
+        <div
+          className={cn(
+            "bg-card border-l border-border transition-all duration-300 flex flex-col fixed top-0 right-0 h-screen z-50 overflow-hidden",
+            "hidden md:flex", // إخفاء في الشاشات الصغيرة
+            collapsed ? "w-24" : "w-64"
+          )}
+          style={{ zIndex: 60 }}
+        >
         {/* Header - Fixed */}
-        <div className="p-4 border-b border-border flex-shrink-0">
+        <div className={cn(
+          "border-b border-border flex-shrink-0",
+          collapsed ? "p-2" : "p-4"
+        )}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className={cn(
+              "flex items-center",
+              collapsed ? "justify-center w-full" : "gap-3"
+            )}>
               {!collapsed && (
                 <>
                   <img
@@ -104,13 +130,16 @@ export function Sidebar({ collapsed, onToggle }) {
               variant="ghost"
               size="icon"
               onClick={onToggle}
-              className="hover:bg-accent"
+              className={cn(
+                "hover:bg-accent transition-colors flex items-center justify-center",
+                collapsed ? "w-95 h-14 !mx-auto p-0" : ""
+              )}
             >
               {collapsed ? (
                 <img
                   src="/tallaam_logo2.png"
                   alt="تعلّم"
-                  className="w-10 h-10 object-contain"
+                  className="w-95 h-14 object-contain"
                 />
               ) : (
                 <X className="w-5 h-5" />
@@ -126,83 +155,99 @@ export function Sidebar({ collapsed, onToggle }) {
             const Icon = item.icon
 
             return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-sm font-medium",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  collapsed && "justify-center"
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.href}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-sm font-medium",
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent",
+                      collapsed && "justify-center p-3 w-12 h-12 mx-auto rounded-lg"
+                    )}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && <span className="block">{item.title}</span>}
+                  </Link>
+                </TooltipTrigger>
+                {collapsed && (
+                  <TooltipContent side="left">
+                    <p>{item.title}</p>
+                  </TooltipContent>
                 )}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && <span className="block">{item.title}</span>}
-              </Link>
+              </Tooltip>
             )
           })}
         </nav>
 
         {/* Footer - Fixed */}
-        <div className="p-4 border-t border-border flex-shrink-0">
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full cursor-pointer justify-start gap-3 bg-secondary text-white hover:text-foreground hover:bg-accent",
-              collapsed && "justify-center"
+        <div className={cn(
+          "border-t border-border flex-shrink-0",
+          collapsed ? "p-2" : "p-4"
+        )}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div 
+                className={cn(
+                  "cursor-pointer bg-secondary text-white hover:text-foreground hover:bg-accent rounded-lg transition-colors",
+                  collapsed ? "w-12 h-12 mx-auto p-3 flex items-center justify-center" : "w-full flex items-center gap-3 px-3 py-3"
+                )}
+                onClick={handleLogout}
+              >
+                <LogOut className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && <span>تسجيل الخروج</span>}
+              </div>
+            </TooltipTrigger>
+            {collapsed && (
+              <TooltipContent side="left">
+                <p>تسجيل الخروج</p>
+              </TooltipContent>
             )}
-            onClick={() => logout()}
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span className="block">تسجيل الخروج</span>}
-          </Button>
+          </Tooltip>
         </div>
       </div>
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
-        {/* Main Navigation Bar */}
-        <div className="flex items-center justify-around px-2 py-2.5">
-          {mainItems.map(item => {
-            const isActive = location.pathname === item.href
-            const Icon = item.icon
+          {/* Main Navigation Bar */}
+          <div className="flex items-center justify-around px-2 py-2.5">
+            {mainItems.map(item => {
+              const isActive = location.pathname === item.href
+              const Icon = item.icon
 
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors text-xs font-medium min-w-0 flex-1",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                <span className="truncate text-center w-full">{item.title}</span>
-              </Link>
-            )
-          })}
-          
-          {/* Expand/Collapse Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setMobileExpanded(!mobileExpanded)}
-            className={cn(
-              "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors text-xs font-medium min-w-0",
-              "text-muted-foreground hover:text-foreground hover:bg-accent"
-            )}
-          >
-            {mobileExpanded ? (
-              <ChevronDown className="w-5 h-5" />
-            ) : (
-              <ChevronUp className="w-5 h-5" />
-            )}
-            <span className="text-xs">المزيد</span>
-          </Button>
-        </div>
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={cn(
+                    "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-xs">{item.title}</span>
+                </Link>
+              )
+            })}
+            
+            {/* More Items Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileExpanded(!mobileExpanded)}
+              className="flex flex-col items-center gap-1 p-2 h-auto hover:bg-accent"
+            >
+              {mobileExpanded ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+              <span className="text-xs">المزيد</span>
+            </Button>
+          </div>
 
         {/* Expanded Menu */}
         {mobileExpanded && (
@@ -243,14 +288,10 @@ export function Sidebar({ collapsed, onToggle }) {
                 })}
 
                 {/* Logout Button */}
-                <Button
-                  variant="ghost"
-                  className="flex cursor-pointer items-center gap-3 px-3 py-3 text-sm font-medium bg-secondary text-white hover:text-foreground hover:bg-accent justify-start"
-                  onClick={() => logout()}
-                >
-                  <LogOut className="w-5 h-5 flex-shrink-0" />
-                  <span>تسجيل الخروج</span>
-                </Button>
+                <LogoutButton 
+                  variant="ghost" 
+                  className="flex cursor-pointer items-center gap-3 px-3 py-3 text-sm font-medium bg-secondary cursor-pointer text-white hover:text-foreground hover:bg-accent justify-start"
+                />
               </div>
             </div>
           </div>
@@ -264,6 +305,7 @@ export function Sidebar({ collapsed, onToggle }) {
           onClick={() => setMobileExpanded(false)}
         />
       )}
-    </>
+      </>
+    </TooltipProvider>
   )
 }

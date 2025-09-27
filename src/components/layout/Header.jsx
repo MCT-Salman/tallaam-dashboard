@@ -1,5 +1,5 @@
 // src\components\layout\Header.jsx
-import { Bell, LogOut, Search, User } from "lucide-react"
+import { Bell, Search, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import React from "react"
-import { useNavigate } from "react-router-dom"
+import { LogoutButton } from "@/components/auth/LogoutButton"
 
 // إضافة الـ CSS للمحتوى الرئيسي لتجنب التغطية
 const headerStyles = `
@@ -65,17 +65,11 @@ export function Header({ sidebarCollapsed = false }) {
         }
     }, [])
 
-    const navigate = useNavigate()
-
-    const logout = () => {
-        navigate('/login')
-    }
-
     return (
         <header className={`bg-card/95 backdrop-blur-sm border-b border-border px-6 py-4 fixed top-0 left-0 right-0 z-50 shadow-sm
                       transition-all duration-300
                       ${sidebarCollapsed
-                ? 'md:mr-16 lg:mr-16'
+                ? 'md:mr-24 lg:mr-24'
                 : 'md:mr-64 lg:mr-64'
             }`}>
             <div className="flex items-center justify-between max-w-full">
@@ -135,15 +129,11 @@ export function Header({ sidebarCollapsed = false }) {
                                 المساعدة
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className=" bg-secondary text-white cursor-pointer hover:bg-destructive/10">
-                                <Button
-                                    variant="ghost"
-                                    className="flex cursor-pointer  items-center gap-3 px-3 py-3 text-sm font-medium  hover:text-foreground hover:bg-accent justify-start"
-                                    onClick={() => logout()}
-                                >
-                                    <LogOut className="w-5 h-5 flex-shrink-0" />
-                                    <span>تسجيل الخروج</span>
-                                </Button>
+                            <DropdownMenuItem className="cursor-pointer hover:bg-destructive/10">
+                                <LogoutButton 
+                                    variant="ghost" 
+                                    className="flex items-center gap-3 px-3 py-3 text-sm font-medium bg-secondary text-white cursor-pointer hover:text-foreground hover:bg-accent justify-start w-full h-auto"
+                                />
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

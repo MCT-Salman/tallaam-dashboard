@@ -81,7 +81,7 @@ export const sidebarItems = [
 // العناصر الأساسية للعرض في الشاشات الصغيرة
 export const mainItems = [
   { title: "الرئيسية", href: "/dashboard", icon: Home },
-  { title: "الدورات", href: "/admin/courses", icon: BookOpen },
-  { title: "الطلاب", href: "/admin/students", icon: Users },
-  { title: "المبيعات", href: "/admin/sales", icon: DollarSign }
+  { title: "الدورات", href: "/courses", icon: BookOpen },
+  { title: "الطلاب", href: "/students", icon: Users },
+  { title: "المبيعات", href: "/sales", icon: DollarSign }
 ]
