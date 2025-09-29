@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from '../hooks/useAuth';
-import { Eye, EyeOff, Phone, Lock, GraduationCap, ChevronDown } from "lucide-react"
+import { Eye, EyeOff, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import heroImg from "/tallaam_logo.png"
-import { countries } from "../data/countriesPhone"
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
-  const [selectedCountry, setSelectedCountry] = useState({
-    countryCode: "+963",
-    countryName: "سوريا"
-  })
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  // لم يعد هناك اختيار دولة/كود
   const { login, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate()
   const location = useLocation();
@@ -30,7 +24,7 @@ export default function Login() {
   }, [isAuthenticated, navigate, location]);
 
   const [formData, setFormData] = useState({
-    phone: "",
+    identifier: "",
     password: ""
   })
   const [error, setError] = useState('');
@@ -40,7 +34,7 @@ export default function Login() {
     e.preventDefault();
     setError('');
     try {
-      await login(formData.phone, formData.password);
+      await login(formData.identifier, formData.password);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'فشل تسجيل الدخول. يُرجى التحقق من البريد الإلكتروني وكلمة المرور.');
@@ -57,7 +51,7 @@ export default function Login() {
       <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-secondary/20 blur-3xl" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen" style={{ clipPath: 'polygon(0 0, 0% 100%, 100% 0);' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
 
 
         {/* Right form panel */}
@@ -72,71 +66,20 @@ export default function Login() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Phone Field */}
+                {/* Identifier Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-right block">رقم الهاتف</Label>
+                  <Label htmlFor="identifier" className="text-right block">اسم المستخدم أو الهاتف</Label>
                   <div className="relative">
-                    <div className="flex gap-2">
-                      {/* Phone Input */}
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="0000000000"
-                        value={formData.phone || ''}
-                        onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                        className="pr-10 text-left"
-                        dir="ltr"
-                        required
-                      />
-                      {/* Country Code Selector */}
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                          className="flex items-center gap-2 px-3 py-2 h-10 rounded-md bg-secondary text-white border border-border hover:bg-secondary/80 transition-colors min-w-[90px] justify-center"
-                        >
-                          <span className="text-sm font-medium" dir="ltr">{selectedCountry.countryCode}</span>
-                          <ChevronDown className="w-4 h-4 text-white" />
-                        </button>
-                        {showCountryDropdown && (
-                          <div className="absolute top-full left-0 mt-1 w-72 bg-card border border-border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
-                            <div className="p-2 border-b">
-                              <Input
-                                type="text"
-                                placeholder="ابحث عن دولة..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="text-right"
-                                autoFocus
-                              />
-                            </div>
-                            <div className="p-2">
-                              {countries
-                                .filter(country =>
-                                  country.countryName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                  country.countryCode.includes(searchTerm)
-                                )
-                                .map((country) => (
-                                  <button
-                                    key={country.countryCode}
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedCountry(country)
-                                      setShowCountryDropdown(false)
-                                      setSearchTerm("")
-                                    }}
-                                    className="flex cursor-pointer items-center gap-3 w-full px-3 py-2 hover:bg-accent rounded-md transition-colors text-right"
-                                  >
-                                    <span className="text-sm text-muted-foreground flex-1">{country.countryName}</span>
-                                    <span className="text-sm font-medium" dir="LTR">{country.countryCode}</span>
-                                  </button>
-                                ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      id="identifier"
+                      type="text"
+                      placeholder="ايميل / اسم المستخدم"
+                      value={formData.identifier || ''}
+                      onChange={e => setFormData(prev => ({ ...prev, identifier: e.target.value }))}
+                      className="pr-3"
+                      dir="rtl"
+                      required
+                    />
                   </div>
                 </div>
 

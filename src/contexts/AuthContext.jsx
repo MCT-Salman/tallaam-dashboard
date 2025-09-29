@@ -41,26 +41,23 @@ export const AuthProvider = ({ children }) => {
 
 
 
-  const login = useCallback(async (phone, password) => {
+  const login = useCallback(async (identifier, password) => {
     setLoading(true);
     try {
-      const response = await apiLogin(phone, password);
+      const response = await apiLogin(identifier, password);
       console.log('🔍 API Response:', response.data);
       console.log('🔍 Full Response:', response);
       
       // Check different possible response structures
       let accessToken, refreshToken, userData;
       
-      if (response.data.data) {
+      if (response.data.success && response.data.data) {
         // If response is wrapped in a data object
         accessToken = response.data.data.accessToken;
         refreshToken = response.data.data.refreshToken;
-        userData = response.data.data;
+        userData = response.data.data.user;
       } else {
-        // If response is direct
-        accessToken = response.data.accessToken;
-        refreshToken = response.data.refreshToken;
-        userData = response.data;
+        throw new Error('Invalid response format');
       }
       
       console.log('🔍 Extracted accessToken:', accessToken);
@@ -76,7 +73,9 @@ export const AuthProvider = ({ children }) => {
       if (refreshToken) {
         localStorage.setItem('refreshToken', refreshToken);
       }
-      localStorage.setItem('user', JSON.stringify(userData));
+      if (userData) {
+        localStorage.setItem('user', JSON.stringify(userData));
+      }
       
       setToken(accessToken);
       setUser(userData);

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.REACT_APP_API_URL || 'https://dev.tallaam.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
+// const API_URL = import.meta.env.REACT_APP_API_URL || 'https://dev.tallaam.com/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -114,17 +115,27 @@ function clearAllAuthData() {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     localStorage.removeItem('app_settings');
-    localStorage.removeItem('theme');
     localStorage.removeItem('language');
     
     console.log('🗑️ تم حذف جميع بيانات المصادقة من localStorage');
 }
 
-// --- وظائف Auth ---
-export const login = (phone, password) => api.post('/auth/login', { phone, password });
+export const login = (identifier, password) => api.post('/admin/login', { identifier, password });
 
 // دالة لتحديث التوكن باستخدام endpoint المحدد
 export const refreshToken = (refreshToken) => api.post('/auth/refresh', { refreshToken });
+
+// --- الكاتالوج: إنشاء تخصص جديد ---
+// يرسل FormData يحتوي على: name, imageUrl
+export const createSpecialization = (name, imageUrl) => {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('imageUrl', imageUrl);
+
+    return api.post('/catalog/admin/specializations', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+};
 
 // تصدير مثيل api للاستخدام في الملفات الأخرى
 export { api };
