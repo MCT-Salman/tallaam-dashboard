@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
+const BASE_URL = import.meta.env.VITE_BASE_URL || "http://127.0.0.1:5000";
 // const API_URL = import.meta.env.REACT_APP_API_URL || 'https://dev.tallaam.com/api';
 
 const api = axios.create({
@@ -137,5 +138,24 @@ export const createSpecialization = (name, imageUrl) => {
     });
 };
 
+// // 📌 جلب كل الاختصاصات مع الصور
+export const getSpecializations = (params) =>
+    api.get('/catalog/admin/specializations', { params });
+
+// جلب الاختصاصات
+// export const getSpecializations = async () => {
+//     return axios.get(`${API_URL}/catalog/admin/specializations`);
+//   };
+  
+  // إنشاء اختصاص
+//   export const createSpecialization = async (name, imageFile) => {
+//     const formData = new FormData();
+//     formData.append("name", name);
+//     formData.append("image", imageFile);
+//     return axios.post(`${API_URL}/catalog/admin/specializations`, formData, {
+//       headers: { "Content-Type": "multipart/form-data" }
+//     });
+//   };
+  
 // تصدير مثيل api للاستخدام في الملفات الأخرى
-export { api };
+export { api, BASE_URL };
