@@ -46,7 +46,10 @@ export default function EnhancedCourseManagement() {
         getLessons,
         getFilteredCourses,
         toggleCourseExpansion,
-        toggleLevelExpansion
+        toggleLevelExpansion,
+        loading,
+        error,
+        fetchSpecializations
     } = useCourseManagement();
 
     return (
@@ -71,6 +74,9 @@ export default function EnhancedCourseManagement() {
                             handleDelete={handleDelete}
                             dialogs={dialogs}
                             closeDialog={closeDialog}
+                            loading={loading}
+                            error={error}
+                            fetchSpecializations={fetchSpecializations}
                         />
 
                         <InstructorManager

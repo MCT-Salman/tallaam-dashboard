@@ -31,14 +31,38 @@ export default function Login() {
   const from = location.state?.from?.pathname || "/dashboard";
 
   const handleSubmit = async (e) => {
+    // Prevent default form submission immediately
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Clear previous errors
     setError('');
+    
+    // Validate form data
+    if (!formData.identifier.trim() || !formData.password.trim()) {
+      setError('يرجى إدخال اسم المستخدم وكلمة المرور');
+      return;
+    }
+    
     try {
+      console.log('Starting login process...');
+      // The login function will handle the loading state
       await login(formData.identifier, formData.password);
-      navigate(from, { replace: true });
+      console.log('Login successful, navigation will be handled by useEffect');
+      // Navigation will be handled by the useEffect hook when isAuthenticated changes
     } catch (err) {
-      setError(err.response?.data?.message || 'فشل تسجيل الدخول. يُرجى التحقق من البريد الإلكتروني وكلمة المرور.');
-      console.error("Login error:", err);
+      console.error('Login error caught in handleSubmit:', err);
+      // Display detailed error message
+      const errorMessage = err.response?.data?.message || 
+                         err.response?.data?.error || 
+                         err.message ||
+                         'فشل تسجيل الدخول. يُرجى التحقق من اسم المستخدم وكلمة المرور.';
+      setError(errorMessage);
+      console.error("Full error details:", err);
+      if (err.response) {
+        console.error("Error response data:", err.response.data);
+        console.error("Error response status:", err.response.status);
+      }
     }
   }
 
@@ -65,7 +89,18 @@ export default function Login() {
               <CardDescription>أدخل بياناتك للوصول إلى حسابك</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form 
+                onSubmit={handleSubmit} 
+                className="space-y-6"
+                onKeyDown={(e) => {
+                  // Prevent form submission on Enter key in input fields
+                  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    // You can optionally trigger the submit manually here
+                    // handleSubmit(e);
+                  }
+                }}
+              >
                 {/* Identifier Field */}
                 <div className="space-y-2">
                   <Label htmlFor="identifier" className="text-right block">اسم المستخدم أو الهاتف</Label>
@@ -118,13 +153,38 @@ export default function Login() {
                 </div>
 
                 {error && (
-                  <p className={`text-sm text-center !mt-2 text-red-600`}>
-                    {error}
-                  </p>
+                  <div className="bg-red-50 border border-red-200 rounded-md p-3 !mt-4">
+                    <p className="text-sm text-center text-red-700 font-medium">
+                      {error}
+                    </p>
+                  </div>
                 )}
 
                 {/* Login Button */}
-                <Button type="submit" className="w-full cursor-pointer">تسجيل الدخول</Button>
+                <Button 
+                  type="button" 
+                  className="w-full cursor-pointer"
+                  disabled={loading}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Create a synthetic event to pass to handleSubmit
+                    const syntheticEvent = {
+                      preventDefault: () => {},
+                      stopPropagation: () => {}
+                    };
+                    await handleSubmit(syntheticEvent);
+                  }}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                      جاري تسجيل الدخول...
+                    </span>
+                  ) : (
+                    'تسجيل الدخول'
+                  )}
+                </Button>
               </form>
             </CardContent>
           </Card>

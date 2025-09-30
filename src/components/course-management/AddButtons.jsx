@@ -18,6 +18,8 @@ const AddButtons = ({
     courseLevels,
     getCourseName 
 }) => {
+    // Ensure specializations is always an array
+    const specializationsArray = Array.isArray(specializations) ? specializations : [];
     return (
         <div className="flex gap-2">
             {/* Add Course Button */}
@@ -66,9 +68,12 @@ const AddButtons = ({
                             >
                                 <SelectTrigger><SelectValue placeholder="اختر الاختصاص" /></SelectTrigger>
                                 <SelectContent>
-                                    {specializations.map(s => (
-                                        <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
-                                    ))}
+                                    {specializationsArray.map(s => {
+                                        const id = s.id || s._id;
+                                        return id ? (
+                                            <SelectItem key={id} value={id.toString()}>{s.name}</SelectItem>
+                                        ) : null;
+                                    })}
                                 </SelectContent>
                             </Select>
                         </div>

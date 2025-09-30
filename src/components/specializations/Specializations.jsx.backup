@@ -27,166 +27,52 @@ export default function EnhancedCourseManagement() {
     // Toast functionality
     const [toast, setToast] = useState({ show: false, title: "", description: "", variant: "default" });
     const showToast = (title, description, variant = "default") => {
-        setToast({ show: true, title, description, variant });
         setTimeout(() => setToast({ show: false, title: "", description: "", variant: "default" }), 3000);
     };
 
     const { usdToSyp } = useAppSettings();
 
     // --- NEW DATA STRUCTURE: Specialization → Instructor → Subject → Course → Level → Lesson ---
-    const [specializations, setSpecializations] = useState([]);
-    const [instructors, setInstructors] = useState([]);
-    const [subjects, setSubjects] = useState([]);
-    const [courses, setCourses] = useState([]);
-    const [courseLevels, setCourseLevels] = useState([]);
-    const [lessons, setLessons] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [specializations, setSpecializations] = useState([
+        { id: 1, name: "معلوماتية", isActive: false },
+        { id: 2, name: "هندسة", isActive: true },
+    ]);
     
     // Ensure specializations is always an array
     const specializationsArray = Array.isArray(specializations) ? specializations : [];
-    
-    // API Base URL - تأكد من الرابط الصحيح
-    const API_BASE_URL = 'http://192.168.3.11:5000/api';
-    
-    // دالة مساعدة للـ API calls
-    const fetchApiData = async (endpoint) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error(`Error fetching ${endpoint}:`, error);
-            throw error;
-        }
-    };
 
-    // Fetch data from API
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                
-                // Fetch specializations - المسار المعدل
-                const specializationsData = await fetchApiData('/catalog/admin/specializations');
-                console.log('Specializations API response:', specializationsData);
-                
-                if (specializationsData.success) {
-                    // التأكد من أن البيانات تأتي من المكان الصحيح
-                    const specializationsList = specializationsData.data.data || specializationsData.data || [];
-                    const mappedSpecializations = specializationsList.map(spec => ({
-                        ...spec,
-                        isActive: spec.isActive ?? true
-                    }));
-                    console.log('Mapped specializations:', mappedSpecializations);
-                    setSpecializations(mappedSpecializations);
-                } else {
-                    showToast('تحذير', 'لم يتم جلب الاختصاصات بنجاح', 'destructive');
-                }
-                
-                // Fetch instructors - تأكد من المسار الصحيح
-                try {
-                    const instructorsData = await fetchApiData('/instructors');
-                    if (instructorsData.success) {
-                        const instructorsList = instructorsData.data.data || instructorsData.data || [];
-                        setInstructors(instructorsList.map(inst => ({
-                            ...inst,
-                            isActive: inst.isActive ?? true
-                        })));
-                    }
-                } catch (error) {
-                    console.error('Error fetching instructors:', error);
-                    showToast('تحذير', 'فشل في جلب بيانات المدرسين', 'destructive');
-                }
-                
-                // Fetch subjects
-                try {
-                    const subjectsData = await fetchApiData('/subjects');
-                    if (subjectsData.success) {
-                        const subjectsList = subjectsData.data.data || subjectsData.data || [];
-                        setSubjects(subjectsList.map(sub => ({
-                            ...sub,
-                            isActive: sub.isActive ?? true
-                        })));
-                    }
-                } catch (error) {
-                    console.error('Error fetching subjects:', error);
-                    showToast('تحذير', 'فشل في جلب بيانات المواد', 'destructive');
-                }
-                
-                // Fetch courses
-                try {
-                    const coursesData = await fetchApiData('/courses');
-                    if (coursesData.success) {
-                        const coursesList = coursesData.data.data || coursesData.data || [];
-                        setCourses(coursesList.map(course => ({
-                            ...course,
-                            isActive: course.isActive ?? true
-                        })));
-                    }
-                } catch (error) {
-                    console.error('Error fetching courses:', error);
-                    showToast('تحذير', 'فشل في جلب بيانات الدورات', 'destructive');
-                }
-                
-                // Fetch course levels
-                try {
-                    const levelsData = await fetchApiData('/course-levels');
-                    if (levelsData.success) {
-                        const levelsList = levelsData.data.data || levelsData.data || [];
-                        setCourseLevels(levelsList.map(level => ({
-                            ...level,
-                            isActive: level.isActive ?? true
-                        })));
-                    }
-                } catch (error) {
-                    console.error('Error fetching course levels:', error);
-                    showToast('تحذير', 'فشل في جلب بيانات المستويات', 'destructive');
-                }
-                
-                // Fetch lessons
-                try {
-                    const lessonsData = await fetchApiData('/lessons');
-                    if (lessonsData.success) {
-                        const lessonsList = lessonsData.data.data || lessonsData.data || [];
-                        setLessons(lessonsList.map(lesson => ({
-                            ...lesson,
-                            isActive: lesson.isActive ?? true
-                        })));
-                    }
-                } catch (error) {
-                    console.error('Error fetching lessons:', error);
-                    showToast('تحذير', 'فشل في جلب بيانات الدروس', 'destructive');
-                }
-                
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                showToast('خطأ', 'فشل في جلب البيانات من الخادم', 'destructive');
-            } finally {
-                setLoading(false);
-            }
-        };
-        
-        fetchData();
-        console.log('Starting data fetch...');
-    }, []);
+    const [instructors, setInstructors] = useState([
+        { id: 1, name: "محمد أحمد", bio: "خبير برمجيات", specializationId: 1, isActive: true },
+        { id: 2, name: "سارة حسن", bio: "مهندسة مدنية", specializationId: 2, isActive: true },
+    ]);
+
+    const [subjects, setSubjects] = useState([
+        { id: 1, name: "لغة C#", specializationId: 1, instructorId: 1, isActive: true },
+        { id: 2, name: "Python", specializationId: 1, instructorId: 1, isActive: true },
+        { id: 3, name: "هندسة مدنية", specializationId: 2, instructorId: 2, isActive: true },
+    ]);
+
+    const [courses, setCourses] = useState([
+        { id: 1, title: "C# للمبتدئين", description: "دورة شاملة", price: 50000, isFree: false, specializationId: 1, instructorId: 1, subjectId: 1, isActive: true, createdAt: "2024-01-15" }
+    ]);
+
+    const [courseLevels, setCourseLevels] = useState([
+        { id: 1, name: "مستوى أول", order: 1, courseId: 1, instructorId: 1, subjectId: 1, isActive: true },
+    ]);
+
+    const [lessons, setLessons] = useState([
+        { id: 1, title: "مقدمة في C#", description: "درس تمهيدي", youtubeUrl: "https://youtube.com/watch?v=example1", googleDriveUrl: "https://drive.google.com/file/d/example1", durationSec: 3600, isFreePreview: true, isActive: true, courseId: 1, courseLevelId: 1 },
+    ]);
 
     // --- State Management ---
     const [activeTab, setActiveTab] = useState("taxonomy");
-    const [dialogs, setDialogs] = useState({ 
-        addCourse: false, editCourse: false, addLevel: false, addLesson: false, 
-        editLesson: false, addInstructor: false, editInstructor: false, 
-        addSpecialization: false, editSpecialization: false, addSubject: false, 
-        editSubject: false 
-    });
+    const [dialogs, setDialogs] = useState({ addCourse: false, editCourse: false, addLevel: false, addLesson: false, editLesson: false, addInstructor: false, editInstructor: false, addSpecialization: false, editSpecialization: false, addSubject: false, editSubject: false });
     const [editingItem, setEditingItem] = useState(null);
     const [expandedCourses, setExpandedCourses] = useState({});
 
     // --- Form States ---
     const [form, setForm] = useState({
-        specialization: { name: "", isActive: true },
+        specialization: { name: "", isActive: false },
         instructor: { name: "", bio: "", specializationId: "" },
         subject: { name: "", specializationId: "", instructorId: "" },
         course: { title: "", description: "", price: "", isFree: false, specializationId: "", instructorId: "", subjectId: "" },
@@ -201,84 +87,38 @@ export default function EnhancedCourseManagement() {
     const getCourseName = (id) => courses.find(c => c.id === id)?.title || "غير محدد";
     const getLevelName = (id) => courseLevels.find(l => l.id === id)?.name || "غير محدد";
 
-    const getInstructorsBySpecialization = (specializationId) => 
-        instructors.filter(i => i.specializationId === parseInt(specializationId));
-    
-    const getSubjectsBySpecialization = (specializationId) => 
-        subjects.filter(s => s.specializationId === parseInt(specializationId));
-    
-    const getSubjectsByInstructor = (instructorId) => 
-        subjects.filter(s => s.instructorId === parseInt(instructorId));
-    
-    const getCourseLevels = (courseId) => 
-        courseLevels.filter(l => l.courseId === courseId).sort((a, b) => a.order - b.order);
-
-    // --- دالة لإضافة بيانات جديدة عبر API ---
-    const handleAddWithApi = async (type, data, successMessage) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/${type}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (!response.ok) throw new Error('Network response was not ok');
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showToast("تمت الإضافة", successMessage);
-                // إعادة تحميل البيانات أو إضافة العنصر مباشرة للstate
-                return result.data;
-            } else {
-                throw new Error(result.message || 'Failed to add item');
-            }
-        } catch (error) {
-            console.error(`Error adding ${type}:`, error);
-            showToast("خطأ", `فشل في إضافة ${type}`, "destructive");
-            throw error;
-        }
-    };
+    const getInstructorsBySpecialization = (specializationId) => instructors.filter(i => i.specializationId === parseInt(specializationId));
+    const getSubjectsBySpecialization = (specializationId) => subjects.filter(s => s.specializationId === parseInt(specializationId));
+    const getSubjectsByInstructor = (instructorId) => subjects.filter(s => s.instructorId === parseInt(instructorId));
+    const getCourseLevels = (courseId) => courseLevels.filter(l => l.courseId === courseId).sort((a, b) => a.order - b.order);
+    const getCourseLevelsByInstructor = (instructorId) => courseLevels.filter(l => l.instructorId === instructorId);
+    const getCourseLevelsBySubject = (subjectId) => courseLevels.filter(l => l.subjectId === subjectId);
+    const getCourseLessons = (courseId, levelId) => lessons.filter(l => l.courseId === courseId && l.courseLevelId === levelId);
 
     // --- Generic Handlers ---
-    const handleAdd = async (type) => {
+    const handleAdd = (type) => {
         const data = form[type];
-        
         // Validation
         if ((type === 'specialization' && !data.name) ||
             (type === 'instructor' && (!data.name || !data.specializationId)) ||
             (type === 'subject' && (!data.name || !data.specializationId || !data.instructorId))) {
             return showToast("خطأ", "يرجى ملء الحقول المطلوبة", "destructive");
         }
+        const newItem = { id: Date.now(), ...data, isActive: true };
+        if (type === 'specialization') setSpecializations(prev => [...prev, newItem]);
+        if (type === 'instructor') setInstructors(prev => [...prev, { ...newItem, specializationId: parseInt(data.specializationId) }]);
+        if (type === 'subject') setSubjects(prev => [...prev, { ...newItem, specializationId: parseInt(data.specializationId), instructorId: parseInt(data.instructorId) }]);
 
-        try {
-            // هنا يمكنك استخدام handleAddWithApi بدلاً من الإضافة المحلية
-            const newItem = { 
-                id: Date.now(), 
-                ...data, 
-                isActive: true 
-            };
-            
-            if (type === 'specialization') setSpecializations(prev => [...prev, newItem]);
-            if (type === 'instructor') setInstructors(prev => [...prev, { ...newItem, specializationId: parseInt(data.specializationId) }]);
-            if (type === 'subject') setSubjects(prev => [...prev, { ...newItem, specializationId: parseInt(data.specializationId), instructorId: parseInt(data.instructorId) }]);
-
-            setForm(prev => ({ ...prev, [type]: {} }));
-            setDialogs(prev => ({ ...prev, [`add${type.charAt(0).toUpperCase() + type.slice(1)}`]: false }));
-            showToast("تمت الإضافة", `تمت إضافة ${type} بنجاح`);
-            
-        } catch (error) {
-            console.error('Error adding item:', error);
-        }
+        setForm(prev => ({ ...prev, [type]: {} }));
+        setDialogs(prev => ({ ...prev, [`add${type.charAt(0).toUpperCase() + type.slice(1)}`]: false }));
+        showToast("تمت الإضافة", `تمت إضافة ${type} بنجاح`);
     };
 
     const handleUpdate = (type) => {
         const data = form[type];
         if (!editingItem) return;
 
-        const updater = (prev) => prev.map(item => (item.id === editingItem.id ? { ...item, ...data } : item));
+        const updater = (item) => (item.id === editingItem.id ? { ...item, ...data } : item);
 
         if (type === 'specialization') setSpecializations(updater);
         if (type === 'instructor') setInstructors(updater);
@@ -328,7 +168,7 @@ export default function EnhancedCourseManagement() {
     };
 
     const handleToggleActive = (type, id) => {
-        const updater = (prev) => prev.map(item => (item.id === id ? { ...item, isActive: !item.isActive } : item));
+        const updater = (item) => (item.id === id ? { ...item, isActive: !item.isActive } : item);
         if (type === 'specialization') setSpecializations(updater);
         if (type === 'instructor') setInstructors(updater);
         if (type === 'subject') setSubjects(updater);
@@ -443,16 +283,6 @@ export default function EnhancedCourseManagement() {
         showToast("تمت الإضافة", "تمت إضافة الدرس بنجاح");
     };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="text-center">
-                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4" />
-                    <p>جاري تحميل البيانات...</p>
-                </div>
-            </div>
-        );
-    }
     return (
         <div className="space-y-6 p-6 max-w-7xl mx-auto">
             {/* --- HEADER --- */}
@@ -489,7 +319,7 @@ export default function EnhancedCourseManagement() {
                                 </Dialog>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                {specializationsArray.map(item => (
+                                {specializationsArray.map(item => {
                                     <div key={item.id} className="flex items-center justify-between p-2 border rounded">
                                         <span>{item.name}</span>
                                         <div className="flex gap-1">

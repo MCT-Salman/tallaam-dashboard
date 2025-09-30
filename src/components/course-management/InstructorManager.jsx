@@ -19,6 +19,8 @@ const InstructorManager = ({
     handleDelete,
     getSpecializationName 
 }) => {
+    // Ensure specializations is always an array
+    const specializationsArray = Array.isArray(specializations) ? specializations : [];
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -41,9 +43,12 @@ const InstructorManager = ({
                                 >
                                     <SelectTrigger><SelectValue placeholder="اختر اختصاص المدرس" /></SelectTrigger>
                                     <SelectContent>
-                                        {specializations.map(s => (
-                                            <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
-                                        ))}
+                                        {specializationsArray.map(s => {
+                                            const id = s.id || s._id;
+                                            return id ? (
+                                                <SelectItem key={id} value={id.toString()}>{s.name}</SelectItem>
+                                            ) : null;
+                                        })}
                                     </SelectContent>
                                 </Select>
                             </div>

@@ -19,6 +19,8 @@ const EditDialogs = ({
     courseLevels,
     getCourseName
 }) => {
+    // Ensure specializations is always an array
+    const specializationsArray = Array.isArray(specializations) ? specializations : [];
     const closeDialog = (dialogName) => {
         setDialogs(prev => ({ ...prev, [dialogName]: false }));
     };
@@ -66,9 +68,12 @@ const EditDialogs = ({
                             >
                                 <SelectTrigger><SelectValue placeholder="اختر اختصاص المدرس" /></SelectTrigger>
                                 <SelectContent>
-                                    {specializations.map(s => (
-                                        <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
-                                    ))}
+                                    {specializationsArray.map(s => {
+                                        const id = s.id || s._id;
+                                        return id ? (
+                                            <SelectItem key={id} value={id.toString()}>{s.name}</SelectItem>
+                                        ) : null;
+                                    })}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -149,9 +154,12 @@ const EditDialogs = ({
                             >
                                 <SelectTrigger><SelectValue placeholder="اختر الاختصاص" /></SelectTrigger>
                                 <SelectContent>
-                                    {specializations.map(s => (
-                                        <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
-                                    ))}
+                                    {specializationsArray.map(s => {
+                                        const id = s.id || s._id;
+                                        return id ? (
+                                            <SelectItem key={id} value={id.toString()}>{s.name}</SelectItem>
+                                        ) : null;
+                                    })}
                                 </SelectContent>
                             </Select>
                         </div>

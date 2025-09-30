@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Trash2, Play, Pause } from "lucide-react";
-import { createSpecialization,BASE_URL,getSpecializations  } from "@/api/api";
+import { createSpecialization, BASE_URL } from "@/api/api";
 
 const SpecializationManager = ({ 
     specializations, 
@@ -16,7 +16,10 @@ const SpecializationManager = ({
     handleAdd, 
     handleToggleActive, 
     openEditDialog, 
-    handleDelete 
+    handleDelete,
+    loading,
+    error,
+    fetchSpecializations
 }) => {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -64,7 +67,17 @@ const SpecializationManager = ({
         <Card>
             {/* العنوان + زر إضافة */}
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>📚 الاختصاصات</CardTitle>
+                <div className="flex items-center space-x-2">
+                    <CardTitle>📚 الاختصاصات</CardTitle>
+                    <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={fetchSpecializations}
+                        disabled={loading}
+                    >
+                        {loading ? 'جاري التحميل...' : 'تحديث'}
+                    </Button>
+                </div>
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button size="sm">
@@ -105,58 +118,95 @@ const SpecializationManager = ({
 
             {/* الجدول */}
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>الصورة</TableHead>
-                            <TableHead>الاسم</TableHead>
-                            <TableHead>الحالة</TableHead>
-                            <TableHead className="text-right">الإجراءات</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {getSpecializations.map(item => (
-                            <TableRow key={item.id}>
-                                <TableCell>
-                                    <img 
-                                        src={`${BASE_URL}${item.imageUrl}`}  
-                                        alt={item.name} 
-                                        className="w-12 h-12 object-cover rounded-md border" 
-                                    />
-                                </TableCell>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell>
-                                    <Badge variant={item.isActive ? "default" : "secondary"}>
-                                        {item.isActive ? "نشط" : "معطل"}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right space-x-2">
-                                    <Button 
-                                        size="icon" 
-                                        variant="ghost" 
-                                        onClick={() => handleToggleActive('specialization', item.id)}
-                                    >
-                                        {item.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                                    </Button>
-                                    <Button 
-                                        size="icon" 
-                                        variant="ghost" 
-                                        onClick={() => openEditDialog('specialization', item)}
-                                    >
-                                        <Edit className="w-4 h-4" />
-                                    </Button>
-                                    <Button 
-                                        size="icon" 
-                                        variant="destructive" 
-                                        onClick={() => handleDelete('specialization', item.id)}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </TableCell>
+                {error && (
+                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                            <p className="text-red-800 font-medium">{error}</p>
+                            <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={fetchSpecializations}
+                                disabled={loading}
+                            >
+                                إعادة المحاولة
+                            </Button>
+                        </div>
+                    </div>
+                )}
+                
+                {loading && (
+                    <div className="flex justify-center items-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    </div>
+                )}
+                
+                {!loading && (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>الصورة</TableHead>
+                                <TableHead>الاسم</TableHead>
+                                <TableHead>الحالة</TableHead>
+                                <TableHead className="text-right">الإجراءات</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {Array.isArray(specializations) && specializations.length > 0 ? specializations.map(item => {
+                                const id = item.id || item._id;
+                                return id ? (
+                                    <TableRow key={id}>
+                                        <TableCell>
+                                            <img 
+                                                src={`${BASE_URL}${item.imageUrl}`}  
+                                                alt={item.name} 
+                                                className="w-12 h-12 object-cover rounded-md border" 
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.src = 'https://via.placeholder.com/48x48?text=No+Image';
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={item.isActive ? "default" : "secondary"}>
+                                                {item.isActive ? "نشط" : "معطل"}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                            <Button 
+                                                size="icon" 
+                                                variant="ghost" 
+                                                onClick={() => handleToggleActive('specialization', id)}
+                                            >
+                                                {item.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                                            </Button>
+                                            <Button 
+                                                size="icon" 
+                                                variant="ghost" 
+                                                onClick={() => openEditDialog('specialization', item)}
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </Button>
+                                            <Button 
+                                                size="icon" 
+                                                variant="destructive" 
+                                                onClick={() => handleDelete('specialization', id)}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : null;
+                            }) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                                        لا توجد تخصصات متاحة
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                )}
             </CardContent>
         </Card>
     );
