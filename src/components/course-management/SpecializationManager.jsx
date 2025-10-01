@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ const SpecializationManager = ({
     specializations, 
     form, 
     handleFormChange, 
-    handleAdd, 
+    // handleAdd, 
     handleToggleActive, 
     openEditDialog, 
     handleDelete,
@@ -24,6 +24,8 @@ const SpecializationManager = ({
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+
+    // console.log("specializations form form page: "+ specializations.map(item => {item.name}));
 
     // تغيير الصورة
     const onImageChange = (e) => {
@@ -48,16 +50,16 @@ const SpecializationManager = ({
             const res = await createSpecialization(name, imageFile);
             const payload = res?.data;
             if (payload?.success && payload?.data) {
-                alert('✅ تم إنشاء التخصص بنجاح');
+                alert(' تم إنشاء التخصص بنجاح');
                 handleFormChange('specialization', 'name', '');
                 setImageFile(null);
                 setImagePreview(null);
                 // يمكنك تحديث القائمة من الـ API هنا لو حبيت
             } else {
-                alert(payload?.message || '❌ فشل إنشاء التخصص');
+                alert(payload?.message || ' فشل إنشاء التخصص');
             }
         } catch (err) {
-            alert(err?.response?.data?.message || '❌ فشل إنشاء التخصص');
+            alert(err?.response?.data?.message || ' فشل إنشاء التخصص');
         } finally {
             setSubmitting(false);
         }
@@ -152,17 +154,18 @@ const SpecializationManager = ({
                         </TableHeader>
                         <TableBody>
                             {Array.isArray(specializations) && specializations.length > 0 ? specializations.map(item => {
-                                const id = item.id || item._id;
+                                const id = item.id;
+                                
                                 return id ? (
                                     <TableRow key={id}>
                                         <TableCell>
                                             <img 
                                                 src={`${BASE_URL}${item.imageUrl}`}  
                                                 alt={item.name} 
-                                                className="w-12 h-12 object-cover rounded-md border" 
+                                                className="w-12 h-12 object-contain rounded-md " 
                                                 onError={(e) => {
                                                     e.target.onerror = null;
-                                                    e.target.src = 'https://via.placeholder.com/48x48?text=No+Image';
+                                                    e.target.src = '/tallaam_logo2.png';
                                                 }}
                                             />
                                         </TableCell>

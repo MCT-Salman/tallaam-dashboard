@@ -8,51 +8,34 @@ export const useCourseManagement = () => {
     const [error, setError] = useState('');
 
     // Fetch specializations from API
-    const fetchSpecializations = async () => {
-        setLoading(true);
-        setError('');
-        try {
-            console.log('Fetching specializations from API...');
-            const response = await getSpecializations();
-            console.log('Specializations response:', response.data.data);
-            
-            // Handle different response structures
-            let specializationsData = [];
-            if (response.data.success && response.data.data) {
-                specializationsData = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
-            } else if (Array.isArray(response.data)) {
-                specializationsData = response.data;
-            } else if (response.data.specializations) {
-                specializationsData = Array.isArray(response.data.specializations) ? response.data.specializations : [response.data.specializations];
-            } else if (response.data.data) {
-                specializationsData = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
-            } else {
-                // Try to find any array in the response
-                const values = Object.values(response.data);
-                const arrayValue = values.find(v => Array.isArray(v));
-                if (arrayValue) {
-                    specializationsData = arrayValue;
-                }
-            }
-            
-            setSpecializations(specializationsData);
-            console.log('Processed specializations:', specializationsData);
-        } catch (err) {
-            console.error('Error fetching specializations:', err);
-            const errorMessage = err.response?.data?.message || 
-                               err.response?.data?.error || 
-                               'فشل في جلب التخصصات';
-            setError(errorMessage);
-            // Fallback to mock data if API fails
-            setSpecializations([
-                { id: 1, name: "معلوماتية", slug: "informatics", isActive: true },
-                { id: 2, name: "هندسة", slug: "engineering", isActive: true },
-            ]);
-        } finally {
-            setLoading(false);
+  const fetchSpecializations = async () => {
+    setLoading(true);
+    setError('');
+    try {
+        console.log('Fetching specializations from API...');
+        const response = await getSpecializations();
+        console.log('Full API response:', response.data);
+        
+        // الطريقة المباشرة بناءً على هيكل البيانات الذي تراه
+        let specializationsData = response.data?.data?.data || [];
+        
+        // تأكد أنها مصفوفة
+        if (!Array.isArray(specializationsData)) {
+            specializationsData = [];
         }
-    };
-
+        
+        console.log('Processed specializations:', specializationsData);
+        setSpecializations(specializationsData);
+        
+    } catch (err) {
+        console.error('Error fetching specializations:', err);
+        const errorMessage = err.response?.data?.message || 
+                           'فشل في جلب التخصصات';
+        setError(errorMessage);
+    } finally {
+        setLoading(false);
+    }
+};
     // Load specializations on component mount
     useEffect(() => {
         fetchSpecializations();
@@ -140,7 +123,7 @@ export const useCourseManagement = () => {
     const getFilteredCourses = () => {
         return courses.filter(course => {
             const matchesSpec = !filters.specializationId || course.specializationId == filters.specializationId;
-            const matchesSearch = !filters.search || 
+            const matchesSearch = !filters.search ||
                 course.title.toLowerCase().includes(filters.search.toLowerCase()) ||
                 course.description.toLowerCase().includes(filters.search.toLowerCase());
             return matchesSpec && matchesSearch;

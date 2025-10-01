@@ -28,7 +28,7 @@ export default function Login() {
     password: ""
   })
   const [error, setError] = useState('');
-  const from = location.state?.from?.pathname || "/dashboard";
+  // const from = location.state?.from?.pathname || "/dashboard";
 
   const handleSubmit = async (e) => {
     // Prevent default form submission immediately
@@ -66,8 +66,8 @@ export default function Login() {
     }
   }
 
-  const buttonClasses = `w-full !p-3 rounded-md text-base font-medium border text-white transition-colors duration-200 cursor-pointer !mt-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 ${loading ? 'opacity-60 cursor-not-allowed' : ''
-    }`
+  // const buttonClasses = `w-full !p-3 rounded-md text-base font-medium border text-white transition-colors duration-200 cursor-pointer !mt-4 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 ${loading ? 'opacity-60 cursor-not-allowed' : ''
+  //   }`
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-primary/20 via-background to-secondary/20" dir="rtl">
