@@ -1,4 +1,6 @@
 import React from 'react';
+import { BASE_URL } from '@/api/api';
+import { imageConfig } from "@/utils/corsConfig";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,7 +19,8 @@ const EditDialogs = ({
     instructors,
     courses,
     courseLevels,
-    getCourseName
+    getCourseName,
+    isSubmitting
 }) => {
     // Ensure specializations is always an array
     const specializationsArray = Array.isArray(specializations) ? specializations : [];
@@ -42,15 +45,48 @@ const EditDialogs = ({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="edit-spec-slug">الرابط المختصر (Slug)</Label>
+                            <Label htmlFor="edit-spec-image">الصورة</Label>
                             <Input 
-                                id="edit-spec-slug"
-                                placeholder="الرابط المختصر (Slug)" 
-                                value={form.specialization.slug || ''} 
-                                onChange={(e) => handleFormChange('specialization', 'slug', e.target.value)} 
+                                id="edit-spec-image"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFormChange('specialization', 'image', e.target.files[0])} 
                             />
+                            {form.specialization.imagePreview ? (
+                                <div className="mt-2">
+                                    <img 
+                                        src={form.specialization.imagePreview} 
+                                        alt="معاينة الصورة الجديدة" 
+                                        className="max-h-40 rounded-md border object-contain" 
+                                    />
+                                </div>
+                            ) : form.specialization.imageUrl ? (
+                                <div className="mt-2">
+                                    {console.log('Image URL:', `${BASE_URL}${form.specialization.imageUrl}`)}
+                                    <img 
+                                        src={`${BASE_URL}${form.specialization.imageUrl}`} 
+                                        alt={`صورة ${form.specialization.name || 'الاختصاص'}`}
+                                        className="max-h-40 rounded-md border object-contain" 
+                                        {...imageConfig}
+                                        onError={(e) => {
+                                            console.error('Error loading image:', e.target.src);
+                                            e.target.onerror = null;
+                                            e.target.src = '/tallaam_logo2.png';
+                                        }}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="mt-2">
+                                    <p className="text-sm text-gray-500">لا توجد صورة</p>
+                                </div>
+                            )}
                         </div>
-                        <Button onClick={() => handleUpdate('specialization')}>حفظ التعديلات</Button>
+                        <Button 
+                            onClick={() => handleUpdate('specialization')} 
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>

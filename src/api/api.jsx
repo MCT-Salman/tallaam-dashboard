@@ -26,58 +26,76 @@ api.interceptors.request.use(
     }
 );
 
+// تكوين ثوابت لمحاولات إعادة المحاولة والتأخير
+const RETRY_CONFIG = {
+    MAX_RETRY_ATTEMPTS: 3,
+    RETRY_DELAY: 1000, // ميلي ثانية
+    TOKEN_REFRESH_COOLDOWN: 5000 // 5 ثواني بين محاولات تحديث التوكن
+};
+
+let lastTokenRefreshTimestamp = 0;
+
 // Interceptor لمعالجة أخطاء المصادقة وتحديث التوكن
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+        const currentTime = Date.now();
         
-        // إذا كان الخطأ 401 أو 400 ولم يتم محاولة تحديث التوكن من قبل
-        if ((error.response?.status === 401 || error.response?.status === 400) && !originalRequest._retry) {
+        // التحقق من حالة الخطأ وعدد المحاولات
+        if ((error.response?.status === 401 || error.response?.status === 400) && 
+            !originalRequest._retry &&
+            originalRequest._retryCount < RETRY_CONFIG.MAX_RETRY_ATTEMPTS) {
+            
+            // التحقق من وقت التبريد بين محاولات تحديث التوكن
+            if (currentTime - lastTokenRefreshTimestamp < RETRY_CONFIG.TOKEN_REFRESH_COOLDOWN) {
+                console.log('⏳ Waiting for token refresh cooldown...');
+                await new Promise(resolve => setTimeout(resolve, RETRY_CONFIG.TOKEN_REFRESH_COOLDOWN));
+            }
+            
             originalRequest._retry = true;
+            originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
             
             const refreshToken = localStorage.getItem('refreshToken');
             if (refreshToken) {
                 try {
-                    console.log('🔄 Attempting to refresh token automatically...');
+                    console.log(`🔄 Attempting to refresh token (attempt ${originalRequest._retryCount}/${RETRY_CONFIG.MAX_RETRY_ATTEMPTS})...`);
                     
-                    // محاولة تحديث التوكن باستخدام الـ endpoint الصحيح
+                    lastTokenRefreshTimestamp = currentTime;
                     const response = await api.post('/auth/refresh', { refreshToken });
-                    console.log('✅ Token refresh response:', response.data);
                     
-                    // استخراج التوكن الجديد من الاستجابة
-                    let newAccessToken;
-                    if (response.data.data) {
-                        newAccessToken = response.data.data.accessToken;
-                    } else {
-                        newAccessToken = response.data.accessToken;
+                    const { data } = response.data;
+                    if (!data?.accessToken || !data?.refreshToken) {
+                        throw new Error('لم يتم العثور على التوكن الجديد في الاستجابة');
                     }
                     
-                    if (!newAccessToken) {
-                        throw new Error('New access token not found in response');
-                    }
+                    localStorage.setItem('accessToken', data.accessToken);
+                    localStorage.setItem('refreshToken', data.refreshToken);
+                    console.log('✅ تم تحديث التوكن بنجاح');
                     
-                    // تحديث التوكن الجديد في localStorage
-                    localStorage.setItem('accessToken', newAccessToken);
-                    console.log('✅ Access token updated in localStorage');
+                    originalRequest.headers['Authorization'] = `Bearer ${data.accessToken}`;
                     
-                    // تحديث الهيدر في الطلب الأصلي
-                    originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
-                    
-                    // إعادة المحاولة مع التوكن الجديد
-                    console.log('🔄 Retrying original request with new token...');
+                    // إضافة تأخير قبل إعادة المحاولة
+                    await new Promise(resolve => setTimeout(resolve, RETRY_CONFIG.RETRY_DELAY));
+                    console.log('🔄 إعادة محاولة الطلب الأصلي مع التوكن الجديد...');
                     return api(originalRequest);
-                } catch (refreshError) {
-                    console.error('❌ Automatic token refresh failed:', refreshError.response?.data?.message || refreshError.message);
                     
-                    // إذا فشل تحديث التوكن، قم بحذف جميع البيانات وتسجيل الخروج
-                    clearAllAuthData();
-                    window.location.href = '/login';
-                    return Promise.reject(refreshError);
+                } catch (refreshError) {
+                    console.error('❌ فشل تحديث التوكن:', refreshError.response?.data?.message || refreshError.message);
+                    
+                    if (originalRequest._retryCount >= RETRY_CONFIG.MAX_RETRY_ATTEMPTS) {
+                        console.error('❌ تم استنفاد جميع محاولات تحديث التوكن');
+                        clearAllAuthData();
+                        window.location.href = '/login';
+                        return Promise.reject(refreshError);
+                    }
+                    
+                    // إضافة تأخير قبل المحاولة التالية
+                    await new Promise(resolve => setTimeout(resolve, RETRY_CONFIG.RETRY_DELAY));
+                    return api(originalRequest);
                 }
             } else {
-                console.error('❌ No refresh token available for automatic refresh');
-                // لا يوجد refresh token، قم بحذف جميع البيانات وتسجيل الخروج
+                console.error('❌ لا يوجد توكن تحديث متاح');
                 clearAllAuthData();
                 window.location.href = '/login';
             }
@@ -141,5 +159,25 @@ export const createSpecialization = (name, imageUrl) => {
 // جلب كل الاختصاصات
 export const getSpecializations = (params) =>
     api.get('/catalog/admin/specializations', { params });
+
+// تحديث اختصاص
+export const updateSpecialization = (id, data) => {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    if (data.imageUrl) {
+        formData.append('imageUrl', data.imageUrl);
+    }
+    return api.put(`/catalog/admin/specializations/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+};
+
+// تفعيل/تعطيل اختصاص
+export const toggleSpecializationStatus = (id, isActive) =>
+    api.put(`/catalog/admin/specializations/${id}/active`, { isActive });
+
+// حذف اختصاص
+export const deleteSpecialization = (id) =>
+    api.delete(`/catalog/admin/specializations/${id}`);
   
 export { api, BASE_URL };

@@ -16,6 +16,8 @@ import Dashboard from "./pages/Dashboard"
 
 const queryClient = new QueryClient()
 
+import "./styles/sonner.css"
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>

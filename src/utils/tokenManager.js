@@ -209,89 +209,131 @@
 
 
 
-// src/utils/tokenManager.js
 import { refreshToken as apiRefreshToken } from '@/api/api';
 
-export const refreshAuthToken = async () => {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
-  try {
-    const response = await apiRefreshToken(refreshToken);
-    console.log('🔄 Refresh Token Response:', response.data);
-    
-    let newAccessToken;
-    if (response.data.success && response.data.data) {
-      newAccessToken = response.data.data.accessToken;
-    } else if (response.data.accessToken) {
-      newAccessToken = response.data.accessToken;
-    } else {
-      throw new Error('New access token not found in response');
-    }
-    
-    if (!newAccessToken) {
-      throw new Error('New access token is empty');
-    }
-    
-    localStorage.setItem('accessToken', newAccessToken);
-    console.log('✅ Token refreshed successfully');
-    return newAccessToken;
-  } catch (error) {
-    console.error('Token refresh failed:', error.response?.data?.message || error.message);
-    throw error;
-  }
+// ثوابت للتكوين
+const TOKEN_CONFIG = {
+  REFRESH_THRESHOLD: 5 * 60 * 1000, // 5 دقائق
+  MONITORING_INTERVAL: 30 * 1000,    // 30 ثانية
+  RETRY_ATTEMPTS: 3,                 // عدد محاولات إعادة المحاولة
+  RETRY_DELAY: 1000                  // تأخير بين المحاولات (بالمللي ثانية)
 };
 
-export const ensureValidToken = async () => {
-  const token = localStorage.getItem('accessToken');
-  if (!token) return false;
+/**
+ * دالة للتحقق من صلاحية التوكن
+ * @param {string} token - التوكن المراد التحقق منه
+ * @returns {Object} معلومات صلاحية التوكن
+ */
+export const checkTokenValidity = (token) => {
+  if (!token) {
+    return { isValid: false, timeUntilExpiry: 0, needsRefresh: false };
+  }
 
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     const expiry = payload.exp * 1000;
     const timeUntilExpiry = expiry - Date.now();
     
-    // إذا بقي أقل من 5 دقائق على انتهاء الصلاحية، قم بالتحديث
-    if (timeUntilExpiry < 5 * 60 * 1000) {
-      console.log('🔄 Token expiring soon, refreshing...');
-      await refreshAuthToken();
-      return true;
-    }
-    
-    return Date.now() < expiry;
+    return {
+      isValid: timeUntilExpiry > 0,
+      timeUntilExpiry,
+      needsRefresh: timeUntilExpiry < TOKEN_CONFIG.REFRESH_THRESHOLD,
+      expiryTime: new Date(expiry)
+    };
   } catch (error) {
-    console.error('Error validating token:', error);
-    return false;
+    console.error('❌ Error checking token validity:', error);
+    return { isValid: false, timeUntilExpiry: 0, needsRefresh: false };
   }
 };
 
-export const startTokenMonitoring = (refreshCallback, interval = 30000) => {
-  console.log(`🔍 Starting token monitoring with interval: ${interval}ms`);
+/**
+ * دالة لتحديث التوكن مع إعادة المحاولة
+ * @returns {Promise<string>} التوكن الجديد
+ */
+export const refreshAuthToken = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) {
+    throw new Error('لا يوجد توكن تحديث متاح');
+  }
+
+  let lastError;
+  for (let attempt = 1; attempt <= TOKEN_CONFIG.RETRY_ATTEMPTS; attempt++) {
+    try {
+      const response = await apiRefreshToken(refreshToken);
+      console.log('🔄 استجابة تحديث التوكن:', response.data);
+      
+      const newAccessToken = response.data?.data?.accessToken || response.data?.accessToken;
+      if (!newAccessToken) {
+        throw new Error('لم يتم العثور على توكن جديد في الاستجابة');
+      }
+      
+      localStorage.setItem('accessToken', newAccessToken);
+      console.log('✅ تم تحديث التوكن بنجاح');
+      return newAccessToken;
+    } catch (error) {
+      lastError = error;
+      console.warn(`❌ فشلت محاولة تحديث التوكن ${attempt}/${TOKEN_CONFIG.RETRY_ATTEMPTS}:`, error.message);
+      
+      if (attempt < TOKEN_CONFIG.RETRY_ATTEMPTS) {
+        await new Promise(resolve => setTimeout(resolve, TOKEN_CONFIG.RETRY_DELAY));
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+/**
+ * دالة للتحقق من صلاحية التوكن وتحديثه إذا لزم الأمر
+ * @returns {Promise<boolean>} نجاح العملية
+ */
+export const ensureValidToken = async () => {
+  const token = localStorage.getItem('accessToken');
+  const tokenStatus = checkTokenValidity(token);
+
+  if (!tokenStatus.isValid) {
+    console.log('❌ التوكن غير صالح');
+    return false;
+  }
+
+  if (tokenStatus.needsRefresh) {
+    try {
+      console.log('🔄 التوكن على وشك الانتهاء، جاري التحديث...');
+      await refreshAuthToken();
+      return true;
+    } catch (error) {
+      console.error('❌ فشل تحديث التوكن:', error);
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * دالة لبدء مراقبة التوكن
+ * @returns {Function} دالة لإيقاف المراقبة
+ */
+export const startTokenMonitoring = () => {
+  console.log(`🔍 بدء مراقبة التوكن بفاصل زمني: ${TOKEN_CONFIG.MONITORING_INTERVAL}ms`);
   
   const monitor = setInterval(async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      if (!token) return;
-
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const expiry = payload.exp * 1000;
-      const timeUntilExpiry = expiry - Date.now();
+      const tokenStatus = checkTokenValidity(token);
       
-      console.log(`🔍 Token status: ${Math.round(timeUntilExpiry / 1000)}s until expiry`);
+      console.log(`🔍 حالة التوكن: ${Math.round(tokenStatus.timeUntilExpiry / 1000)} ثانية حتى الانتهاء`);
       
-      // إذا بقي أقل من 10 دقائق، قم بالتحديث
-      if (timeUntilExpiry < 10 * 60 * 1000) {
-        await refreshCallback();
+      if (tokenStatus.needsRefresh) {
+        await refreshAuthToken();
       }
     } catch (error) {
-      console.error('Error in token monitoring:', error);
+      console.error('❌ خطأ في مراقبة التوكن:', error);
     }
-  }, interval);
+  }, TOKEN_CONFIG.MONITORING_INTERVAL);
 
   return () => {
-    console.log('⏹️ Stopping token monitoring');
+    console.log('⏹️ إيقاف مراقبة التوكن');
     clearInterval(monitor);
   };
 };

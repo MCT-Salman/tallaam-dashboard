@@ -1,41 +1,43 @@
 import { useState, useEffect } from 'react';
-import { getSpecializations } from '@/api/api';
+import { getSpecializations, updateSpecialization, deleteSpecialization, toggleSpecializationStatus, createSpecialization } from '@/api/api';
+import { showSuccessToast, showErrorToast, SUCCESS_MESSAGES, ERROR_MESSAGES } from './useToastMessages';
 
 export const useCourseManagement = () => {
     // --- DATA STRUCTURE ---
     const [specializations, setSpecializations] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Fetch specializations from API
-  const fetchSpecializations = async () => {
-    setLoading(true);
-    setError('');
-    try {
-        console.log('Fetching specializations from API...');
-        const response = await getSpecializations();
-        console.log('Full API response:', response.data);
-        
-        // الطريقة المباشرة بناءً على هيكل البيانات الذي تراه
-        let specializationsData = response.data?.data?.data || [];
-        
-        // تأكد أنها مصفوفة
-        if (!Array.isArray(specializationsData)) {
-            specializationsData = [];
+    const fetchSpecializations = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            console.log('Fetching specializations from API...');
+            const response = await getSpecializations();
+            console.log('Full API response:', response.data);
+
+            // الطريقة المباشرة بناءً على هيكل البيانات الذي تراه
+            let specializationsData = response.data?.data?.data || [];
+
+            // تأكد أنها مصفوفة
+            if (!Array.isArray(specializationsData)) {
+                specializationsData = [];
+            }
+
+            console.log('Processed specializations:', specializationsData);
+            setSpecializations(specializationsData);
+
+        } catch (err) {
+            console.error('Error fetching specializations:', err);
+            const errorMessage = err.response?.data?.message ||
+                'فشل في جلب التخصصات';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
         }
-        
-        console.log('Processed specializations:', specializationsData);
-        setSpecializations(specializationsData);
-        
-    } catch (err) {
-        console.error('Error fetching specializations:', err);
-        const errorMessage = err.response?.data?.message || 
-                           'فشل في جلب التخصصات';
-        setError(errorMessage);
-    } finally {
-        setLoading(false);
-    }
-};
+    };
     // Load specializations on component mount
     useEffect(() => {
         fetchSpecializations();
@@ -71,7 +73,7 @@ export const useCourseManagement = () => {
     ]);
 
     // --- State Management ---
-    const [toast, setToast] = useState({ show: false, title: "", description: "", variant: "default" });
+    // تم إزالة حالة التوست القديمة واستبدالها بنظام التوست الجديد
     const [activeTab, setActiveTab] = useState("taxonomy");
     const [dialogs, setDialogs] = useState({
         addCourse: false, editCourse: false,
@@ -84,12 +86,25 @@ export const useCourseManagement = () => {
     const [expandedCourses, setExpandedCourses] = useState({});
     const [expandedLevels, setExpandedLevels] = useState({});
     const [form, setForm] = useState({
-        specialization: { name: '' },
+        specialization: { name: '', image: null, imagePreview: null },
         instructor: { name: '', bio: '', avatarUrl: '', specializationId: '' },
         course: { title: '', slug: '', description: '', specializationId: '' },
         level: { name: '', order: 1, priceUSD: 0, priceSAR: 0, isFree: false, courseId: '', instructorId: '' },
         lesson: { title: '', description: '', youtubeUrl: '', googleDriveUrl: '', durationSec: 0, orderIndex: 1, isFreePreview: false, courseLevelId: '' }
     });
+
+    const handleFormChange = (type, field, value) => {
+        setForm(prev => ({
+            ...prev,
+            [type]: {
+                ...prev[type],
+                [field]: value,
+                ...(field === 'image' && {
+                    imagePreview: value ? URL.createObjectURL(value) : null
+                })
+            }
+        }));
+    };
     const [filters, setFilters] = useState({
         specializationId: '',
         instructorId: '',
@@ -146,67 +161,127 @@ export const useCourseManagement = () => {
 
     // --- CRUD Operations ---
     const handleAdd = async (type) => {
-        console.log(`Adding ${type}:`, form[type]);
-        // Mock implementation
-        setToast({
-            show: true,
-            title: "نجاح",
-            description: `تمت إضافة ${type} بنجاح`,
-            variant: "default"
-        });
+        setIsSubmitting(true);
+        try {
+            if (type === 'specialization') {
+                const response = await createSpecialization(form[type]);
+                if (response.data?.success) {
+                    await fetchSpecializations();
+                    showSuccessToast(SUCCESS_MESSAGES.CREATE('الاختصاص'));
+                    closeDialog(type);
+                }
+            } else {
+                console.log(`Adding ${type}:`, form[type]);
+                // Mock implementation for other types
+                showSuccessToast(SUCCESS_MESSAGES.CREATE(type));
+                closeDialog(type);
+            }
+        } catch (error) {
+            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.CREATE('الاختصاص'));
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const handleUpdate = async (type, id) => {
-        console.log(`Updating ${type} ${id}:`, form[type]);
-        // Mock implementation
-        setToast({
-            show: true,
-            title: "نجاح",
-            description: `تم تحديث ${type} بنجاح`,
-            variant: "default"
-        });
+    const handleUpdate = async (type) => {
+        setIsSubmitting(true);
+        try {
+            if (type === 'specialization') {
+                const id = form[type].id;
+                if (!id) {
+                    showErrorToast('معرف الاختصاص غير موجود');
+                    return;
+                }
+                const formData = { ...form[type] };
+                if (formData.image) {
+                    formData.imageUrl = formData.image;
+                    delete formData.image;
+                    delete formData.imagePreview;
+                }
+                const response = await updateSpecialization(id, formData);
+                if (response.data?.success) {
+                    await fetchSpecializations();
+                    showSuccessToast(SUCCESS_MESSAGES.UPDATE('الاختصاص'));
+                    closeDialog(type);
+                }
+            } else {
+                console.log(`Updating ${type}:`, form[type]);
+                // Mock implementation for other types
+                showSuccessToast(SUCCESS_MESSAGES.UPDATE(type));
+                closeDialog(type);
+            }
+        } catch (error) {
+            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.UPDATE('الاختصاص'));
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDelete = async (type, id) => {
-        if (confirm(`هل أنت متأكد من حذف ${type}؟`)) {
-            console.log(`Deleting ${type} ${id}`);
-            // Mock implementation
-            setToast({
-                show: true,
-                title: "نجاح",
-                description: `تم حذف ${type} بنجاح`,
-                variant: "default"
-            });
+        try {
+            if (type === 'specialization') {
+                const response = await deleteSpecialization(id);
+                if (response.data?.success) {
+                    await fetchSpecializations();
+                    showSuccessToast(SUCCESS_MESSAGES.DELETE('الاختصاص'));
+                }
+            } else {
+                console.log(`Deleting ${type} ${id}`);
+                showSuccessToast(SUCCESS_MESSAGES.DELETE('الاختصاص'));
+            }
+        } catch (error) {
+            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.DELETE('الاختصاص'));
         }
     };
 
     const handleToggleActive = async (type, id) => {
-        console.log(`Toggling ${type} ${id} active status`);
-        // Mock implementation
-        setToast({
-            show: true,
-            title: "نجاح",
-            description: `تم تحديث حالة ${type} بنجاح`,
-            variant: "default"
-        });
+        try {
+            if (type === 'specialization') {
+                const spec = specializations.find(s => s.id === id);
+                if (spec) {
+                    const response = await toggleSpecializationStatus(id, !spec.isActive);
+                    if (response.data?.success) {
+                        await fetchSpecializations();
+                        showSuccessToast(SUCCESS_MESSAGES.TOGGLE('الاختصاص', !spec.isActive));
+                    }
+                }
+            } else {
+                console.log(`Toggling ${type} ${id} active status`);
+                // Mock implementation for other types
+                showSuccessToast(SUCCESS_MESSAGES.TOGGLE(type, true));
+            }
+        } catch (error) {
+            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.TOGGLE('الاختصاص'));
+        }
     };
 
-    const handleFormChange = (type, field, value) => {
-        setForm(prev => ({
-            ...prev,
-            [type]: {
-                ...prev[type],
-                [field]: value
-            }
-        }));
-    };
+    // const handleFormChange = (type, field, value) => {
+    //     setForm(prev => ({
+    //         ...prev,
+    //         [type]: {
+    //             ...prev[type],
+    //             [field]: value
+    //         }
+    //     }));
+    // };
 
     const openEditDialog = (type, item) => {
         setEditingItem(item);
-        setForm(prev => ({
-            ...prev,
-            [type]: { ...item }
-        }));
+        if (type === 'specialization') {
+            setForm(prev => ({
+                ...prev,
+                [type]: { 
+                    ...item,
+                    image: null,
+                    imagePreview: null
+                }
+            }));
+        } else {
+            setForm(prev => ({
+                ...prev,
+                [type]: { ...item }
+            }));
+        }
         setDialogs(prev => ({
             ...prev,
             [`edit${type.charAt(0).toUpperCase() + type.slice(1)}`]: true
@@ -223,7 +298,6 @@ export const useCourseManagement = () => {
     };
 
     return {
-        toast,
         specializations,
         instructors,
         courses,
@@ -258,6 +332,7 @@ export const useCourseManagement = () => {
         toggleLevelExpansion,
         loading,
         error,
+        isSubmitting,
         fetchSpecializations
     };
 };

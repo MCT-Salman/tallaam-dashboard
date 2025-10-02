@@ -1,13 +1,16 @@
 import React, {useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { showSuccessToast, showErrorToast } from '@/hooks/useToastMessages';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Edit, Trash2, Play, Pause } from "lucide-react";
 import { createSpecialization, BASE_URL } from "@/api/api";
+import { imageConfig } from "@/utils/corsConfig";
 
 const SpecializationManager = ({ 
     specializations, 
@@ -24,6 +27,8 @@ const SpecializationManager = ({
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, itemId: null, itemName: '' });
 
     // console.log("specializations form form page: "+ specializations.map(item => {item.name}));
 
@@ -38,11 +43,11 @@ const SpecializationManager = ({
     const handleSave = async () => {
         const name = (form?.specialization?.name || "").trim();
         if (!name) {
-            alert('يرجى إدخال اسم الاختصاص');
+            showErrorToast('يرجى إدخال اسم الاختصاص');
             return;
         }
         if (!imageFile) {
-            alert('يرجى اختيار صورة للاختصاص');
+            showErrorToast('يرجى اختيار صورة للاختصاص');
             return;
         }
         try {
@@ -50,16 +55,20 @@ const SpecializationManager = ({
             const res = await createSpecialization(name, imageFile);
             const payload = res?.data;
             if (payload?.success && payload?.data) {
-                alert(' تم إنشاء التخصص بنجاح');
+                showSuccessToast('تم إنشاء التخصص بنجاح');
+                // إعادة تعيين النموذج
                 handleFormChange('specialization', 'name', '');
                 setImageFile(null);
                 setImagePreview(null);
-                // يمكنك تحديث القائمة من الـ API هنا لو حبيت
+                // تحديث القائمة
+                await fetchSpecializations();
+                // إغلاق الديالوج
+                setIsDialogOpen(false);
             } else {
-                alert(payload?.message || ' فشل إنشاء التخصص');
+                showErrorToast(payload?.message || 'فشل إنشاء التخصص');
             }
         } catch (err) {
-            alert(err?.response?.data?.message || ' فشل إنشاء التخصص');
+            showErrorToast(err?.response?.data?.message || 'فشل إنشاء التخصص');
         } finally {
             setSubmitting(false);
         }
@@ -80,7 +89,7 @@ const SpecializationManager = ({
                         {loading ? 'جاري التحميل...' : 'تحديث'}
                     </Button>
                 </div>
-                <Dialog>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                         <Button size="sm">
                             إضافة <Plus className="w-4 h-4 ml-1" />
@@ -162,7 +171,8 @@ const SpecializationManager = ({
                                             <img 
                                                 src={`${BASE_URL}${item.imageUrl}`}  
                                                 alt={item.name} 
-                                                className="w-12 h-12 object-contain rounded-md " 
+                                                className="w-12 h-12 object-contain rounded-md" 
+                                                {...imageConfig}
                                                 onError={(e) => {
                                                     e.target.onerror = null;
                                                     e.target.src = '/tallaam_logo2.png';
@@ -193,7 +203,11 @@ const SpecializationManager = ({
                                             <Button 
                                                 size="icon" 
                                                 variant="destructive" 
-                                                onClick={() => handleDelete('specialization', id)}
+                                                onClick={() => setDeleteDialog({ 
+                                                    isOpen: true, 
+                                                    itemId: id,
+                                                    itemName: item.name 
+                                                })}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
@@ -211,6 +225,34 @@ const SpecializationManager = ({
                     </Table>
                 )}
             </CardContent>
+
+            {/* ديالوج تأكيد الحذف */}
+            <AlertDialog open={deleteDialog.isOpen} onOpenChange={(isOpen) => setDeleteDialog(prev => ({ ...prev, isOpen }))}>
+                <AlertDialogContent className="text-right">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-right mb-2">هل أنت متأكد من حذف هذا الاختصاص؟</AlertDialogTitle>
+                        <AlertDialogDescription className="text-right" dir="rtl">
+                            سيتم حذف الاختصاص "{deleteDialog.itemName}" بشكل نهائي. لا يمكن التراجع عن هذا الإجراء.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter dir="rtl" className="flex flex-row-reverse justify-start gap-2">
+                        <AlertDialogAction 
+                            className="bg-red-500 hover:bg-red-600"
+                            onClick={async () => {
+                                await handleDelete('specialization', deleteDialog.itemId);
+                                setDeleteDialog({ isOpen: false, itemId: null, itemName: '' });
+                            }}
+                        >
+                            حذف
+                        </AlertDialogAction>
+                        <AlertDialogCancel 
+                            onClick={() => setDeleteDialog({ isOpen: false, itemId: null, itemName: '' })}
+                        >
+                            إلغاء
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     );
 };

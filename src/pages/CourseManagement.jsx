@@ -48,6 +48,7 @@ export default function EnhancedCourseManagement() {
         toggleCourseExpansion,
         toggleLevelExpansion,
         loading,
+        isSubmitting,
         error,
         fetchSpecializations
     } = useCourseManagement();
@@ -139,6 +140,7 @@ export default function EnhancedCourseManagement() {
                 courseLevels={courseLevels}
                 getCourseName={getCourseName}
                 closeDialog={closeDialog}
+                isSubmitting={isSubmitting}
             />
 
             <ToastNotification toast={toast} />
