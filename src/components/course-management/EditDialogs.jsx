@@ -1,3 +1,4 @@
+// src\components\course-management\EditDialogs.jsx
 import React from 'react';
 import { BASE_URL } from '@/api/api';
 import { imageConfig } from "@/utils/corsConfig";

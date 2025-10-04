@@ -1,3 +1,4 @@
+// src\components\auth\LogoutButton.jsx
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { LogOut } from "lucide-react";

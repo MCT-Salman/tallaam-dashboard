@@ -1,3 +1,5 @@
+// src\data\sidebarItems.js
+// src\data\sidebarItems.js
 import { Home, BookOpen, Users, Settings, User, BarChart3, Bell, DollarSign, Megaphone, Percent, UserCheck, MessageSquare, Link as LinkIcon, Image} from "lucide-react"
 
 export const sidebarItems = [

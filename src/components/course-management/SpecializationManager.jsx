@@ -1,3 +1,4 @@
+// src\components\course-management\SpecializationManager.jsx
 import React, {useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { showSuccessToast, showErrorToast } from '@/hooks/useToastMessages';
@@ -79,7 +80,7 @@ const SpecializationManager = ({
             {/* العنوان + زر إضافة */}
             <CardHeader className="flex flex-row items-center justify-between">
                 <div className="flex items-center space-x-2">
-                    <CardTitle>📚 الاختصاصات</CardTitle>
+                    <CardTitle> الاختصاصات</CardTitle>
                     <Button 
                         size="sm" 
                         variant="outline" 

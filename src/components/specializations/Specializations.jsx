@@ -1,4 +1,4 @@
-// // https://documenter.getpostman.com/view/44536088/2sB3HtFc79#b06cfeb7-8e40-44b0-9911-b9050f999bff
+// src\components\specializations\Specializations.jsx
 // import React, { useState, useEffect } from "react"
 // import { Plus, Edit, Trash2, Play, Pause, Upload, Link as LinkIcon, BookOpen, Users, Video, ChevronDown, ChevronRight, Settings, Search, Filter, MoreHorizontal, CheckSquare, Square, AlertTriangle, Eye, EyeOff, Copy, Download, RefreshCw } from "lucide-react"
 // import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

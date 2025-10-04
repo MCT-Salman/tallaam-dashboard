@@ -1,3 +1,4 @@
+// src\pages\CourseManagement.jsx
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCourseManagement } from "@/hooks/useCourseManagement";
@@ -50,7 +51,10 @@ export default function EnhancedCourseManagement() {
         loading,
         isSubmitting,
         error,
-        fetchSpecializations
+        fetchSpecializations,
+        fetchCourses,
+        fetchCourseLevels,
+        fetchLessons
     } = useCourseManagement();
 
     return (
@@ -113,7 +117,6 @@ export default function EnhancedCourseManagement() {
                         handleFormChange={handleFormChange}
                         handleAdd={handleAdd}
                         handleToggleActive={handleToggleActive}
-                        openEditDialog={openEditDialog}
                         handleDelete={handleDelete}
                         getSpecializationName={getSpecializationName}
                         getInstructorName={getInstructorName}
@@ -124,6 +127,8 @@ export default function EnhancedCourseManagement() {
                         toggleCourseExpansion={toggleCourseExpansion}
                         toggleLevelExpansion={toggleLevelExpansion}
                         closeDialog={closeDialog}
+                        fetchCourseLevels={fetchCourseLevels}
+                        fetchLessons={fetchLessons}
                     />
                 </TabsContent>
             </Tabs>

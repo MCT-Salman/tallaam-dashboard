@@ -1,4 +1,4 @@
-// src/contexts/AppSettingsContext.jsx
+// src\contexts\AppSettingsContext.jsx
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 const AppSettingsContext = createContext(null)

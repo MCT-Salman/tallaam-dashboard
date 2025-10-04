@@ -15,7 +15,8 @@ const LevelManager = ({
     getInstructorName,
     getLessons,
     setForm,
-    setDialogs
+    setDialogs,
+    fetchLessons
 }) => {
     if (!level) {
         return null;

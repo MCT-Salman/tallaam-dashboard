@@ -1,3 +1,4 @@
+// src\components\course-management\CourseManager.jsx
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,20 +25,20 @@ const CourseManager = ({
     expandedLevels,
     toggleLevelExpansion,
     handleToggleActive,
-    openEditDialog,
     handleDelete,
     getSpecializationName,
     getCourseLevels,
     getInstructorName,
     getLessons,
-    getFilteredCourses
+    getFilteredCourses,
+    fetchCourseLevels,
+    fetchLessons
 }) => {
     const filteredCourses = getFilteredCourses();
 
     return (
         <>
             <FilterSection 
-                filters={filters} 
                 setFilters={setFilters} 
                 specializations={specializations} 
             />

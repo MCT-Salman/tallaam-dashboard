@@ -1,4 +1,4 @@
-import React from 'react';
+// src\components\course-management\CourseCard.jsx
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,8 @@ const CourseCard = ({
     expandedLevels,
     toggleLevelExpansion,
     getInstructorName,
-    getLessons
+    getLessons,
+    fetchCourseLevels
 }) => {
     return (
         <Card key={course.id} className="border-l-4 border-l-primary/50 hover:shadow-md transition-shadow">

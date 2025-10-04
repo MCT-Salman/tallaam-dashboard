@@ -1,10 +1,18 @@
+// src\hooks\useCourseManagement.js
+  // src\hooks\useCourseManagement.js
 import { useState, useEffect } from 'react';
 import { getSpecializations, updateSpecialization, deleteSpecialization, toggleSpecializationStatus, createSpecialization } from '@/api/api';
+import { getCourses, createCourse, updateCourse, deleteCourse, toggleCourseStatus } from '@/api/api';
+import { getCourseLevels, createCourseLevel, updateCourseLevel, deleteCourseLevel, toggleCourseLevelStatus } from '@/api/api';
+import { getCourseLessons, getLevelLessons, createLesson, createLessonForLevel, updateLesson, deleteLesson, toggleLessonStatus } from '@/api/api';
 import { showSuccessToast, showErrorToast, SUCCESS_MESSAGES, ERROR_MESSAGES } from './useToastMessages';
 
 export const useCourseManagement = () => {
     // --- DATA STRUCTURE ---
     const [specializations, setSpecializations] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [courseLevels, setCourseLevels] = useState([]);
+    const [lessons, setLessons] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,38 +46,85 @@ export const useCourseManagement = () => {
             setLoading(false);
         }
     };
-    // Load specializations on component mount
+    // Fetch courses from API
+    const fetchCourses = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            console.log('Fetching courses from API...');
+            const response = await getCourses();
+            console.log('Courses API response:', response.data);
+
+            let coursesData = response.data?.data?.courses || [];
+            if (!Array.isArray(coursesData)) {
+                coursesData = [];
+            }
+
+            console.log('Processed courses:', coursesData);
+            setCourses(coursesData);
+
+        } catch (err) {
+            console.error('Error fetching courses:', err);
+            const errorMessage = err.response?.data?.message || 'فشل في جلب الدورات';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch course levels for a specific course
+    const fetchCourseLevels = async (courseId) => {
+        try {
+            console.log('Fetching course levels for course:', courseId);
+            const response = await getCourseLevels(courseId);
+            console.log('Course levels response:', response.data);
+
+            let levelsData = response.data?.data || [];
+            if (!Array.isArray(levelsData)) {
+                levelsData = [];
+            }
+
+            setCourseLevels(prev => ({
+                ...prev,
+                [courseId]: levelsData
+            }));
+
+        } catch (err) {
+            console.error('Error fetching course levels:', err);
+        }
+    };
+
+    // Fetch lessons for a specific level
+    const fetchLessons = async (levelId) => {
+        try {
+            console.log('Fetching lessons for level:', levelId);
+            const response = await getLevelLessons(levelId);
+            console.log('Lessons response:', response.data);
+
+            let lessonsData = response.data?.data || [];
+            if (!Array.isArray(lessonsData)) {
+                lessonsData = [];
+            }
+
+            setLessons(prev => ({
+                ...prev,
+                [levelId]: lessonsData
+            }));
+
+        } catch (err) {
+            console.error('Error fetching lessons:', err);
+        }
+    };
+
+    // Load data on component mount
     useEffect(() => {
         fetchSpecializations();
+        fetchCourses();
     }, []);
 
     const [instructors, setInstructors] = useState([
         { id: 1, name: "محمد أحمد", bio: "خبير برمجيات", avatarUrl: "", specializationId: 1, isActive: true },
         { id: 2, name: "سارة حسن", bio: "مهندسة مدنية", avatarUrl: "", specializationId: 2, isActive: true },
-    ]);
-
-    const [courses, setCourses] = useState([
-        { id: 1, title: "C# للمبتدئين", slug: "csharp-beginners", description: "دورة شاملة في البرمجة", specializationId: 1, isActive: true }
-    ]);
-
-    const [courseLevels, setCourseLevels] = useState([
-        { id: 1, name: "مستوى أول", order: 1, priceUSD: 50, priceSAR: 200, isFree: false, isActive: true, courseId: 1, instructorId: 1 },
-    ]);
-
-    const [lessons, setLessons] = useState([
-        {
-            id: 1,
-            title: "مقدمة في C#",
-            description: "درس تمهيدي",
-            youtubeUrl: "https://youtube.com/watch?v=example1",
-            youtubeId: "example1",
-            googleDriveUrl: "https://drive.google.com/file/d/example1",
-            durationSec: 3600,
-            orderIndex: 1,
-            isFreePreview: true,
-            isActive: true,
-            courseLevelId: 1
-        },
     ]);
 
     // --- State Management ---
@@ -128,11 +183,11 @@ export const useCourseManagement = () => {
     };
 
     const getCourseLevels = (courseId) => {
-        return courseLevels.filter(level => level.courseId === courseId);
+        return courseLevels[courseId] || [];
     };
 
     const getLessons = (levelId) => {
-        return lessons.filter(lesson => lesson.courseLevelId === levelId);
+        return lessons[levelId] || [];
     };
 
     const getFilteredCourses = () => {
@@ -170,14 +225,43 @@ export const useCourseManagement = () => {
                     showSuccessToast(SUCCESS_MESSAGES.CREATE('الاختصاص'));
                     closeDialog(type);
                 }
+            } else if (type === 'course') {
+                const response = await createCourse(form[type]);
+                if (response.data?.success) {
+                    await fetchCourses();
+                    showSuccessToast(SUCCESS_MESSAGES.CREATE('الدورة'));
+                    closeDialog(type);
+                }
+            } else if (type === 'level') {
+                const response = await createCourseLevel(form[type].courseId, form[type]);
+                if (response.data?.success) {
+                    await fetchCourseLevels(form[type].courseId);
+                    showSuccessToast(SUCCESS_MESSAGES.CREATE('المستوى'));
+                    closeDialog(type);
+                }
+            } else if (type === 'lesson') {
+                const targetId = form[type].courseLevelId || form[type].courseId;
+                const response = form[type].courseLevelId
+                    ? await createLessonForLevel(form[type].courseLevelId, form[type])
+                    : await createLesson(form[type].courseId, form[type]);
+
+                if (response.data?.success) {
+                    if (form[type].courseLevelId) {
+                        await fetchLessons(form[type].courseLevelId);
+                    }
+                    showSuccessToast(SUCCESS_MESSAGES.CREATE('الدرس'));
+                    closeDialog(type);
+                }
             } else {
                 console.log(`Adding ${type}:`, form[type]);
-                // Mock implementation for other types
                 showSuccessToast(SUCCESS_MESSAGES.CREATE(type));
                 closeDialog(type);
             }
         } catch (error) {
-            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.CREATE('الاختصاص'));
+            const errorType = type === 'specialization' ? 'الاختصاص' :
+                            type === 'course' ? 'الدورة' :
+                            type === 'level' ? 'المستوى' : 'الدرس';
+            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.CREATE(errorType));
         } finally {
             setIsSubmitting(false);
         }
@@ -204,14 +288,58 @@ export const useCourseManagement = () => {
                     showSuccessToast(SUCCESS_MESSAGES.UPDATE('الاختصاص'));
                     closeDialog(type);
                 }
+            } else if (type === 'course') {
+                const id = form[type].id;
+                if (!id) {
+                    showErrorToast('معرف الدورة غير موجود');
+                    return;
+                }
+                const response = await updateCourse(id, form[type]);
+                if (response.data?.success) {
+                    await fetchCourses();
+                    showSuccessToast(SUCCESS_MESSAGES.UPDATE('الدورة'));
+                    closeDialog(type);
+                }
+            } else if (type === 'level') {
+                const id = form[type].id;
+                if (!id) {
+                    showErrorToast('معرف المستوى غير موجود');
+                    return;
+                }
+                const response = await updateCourseLevel(id, form[type]);
+                if (response.data?.success) {
+                    const courseId = form[type].courseId;
+                    if (courseId) {
+                        await fetchCourseLevels(courseId);
+                    }
+                    showSuccessToast(SUCCESS_MESSAGES.UPDATE('المستوى'));
+                    closeDialog(type);
+                }
+            } else if (type === 'lesson') {
+                const id = form[type].id;
+                if (!id) {
+                    showErrorToast('معرف الدرس غير موجود');
+                    return;
+                }
+                const response = await updateLesson(id, form[type]);
+                if (response.data?.success) {
+                    const levelId = form[type].courseLevelId;
+                    if (levelId) {
+                        await fetchLessons(levelId);
+                    }
+                    showSuccessToast(SUCCESS_MESSAGES.UPDATE('الدرس'));
+                    closeDialog(type);
+                }
             } else {
                 console.log(`Updating ${type}:`, form[type]);
-                // Mock implementation for other types
                 showSuccessToast(SUCCESS_MESSAGES.UPDATE(type));
                 closeDialog(type);
             }
         } catch (error) {
-            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.UPDATE('الاختصاص'));
+            const errorType = type === 'specialization' ? 'الاختصاص' :
+                            type === 'course' ? 'الدورة' :
+                            type === 'level' ? 'المستوى' : 'الدرس';
+            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.UPDATE(errorType));
         } finally {
             setIsSubmitting(false);
         }
@@ -225,12 +353,33 @@ export const useCourseManagement = () => {
                     await fetchSpecializations();
                     showSuccessToast(SUCCESS_MESSAGES.DELETE('الاختصاص'));
                 }
+            } else if (type === 'course') {
+                const response = await deleteCourse(id);
+                if (response.data?.success) {
+                    await fetchCourses();
+                    showSuccessToast(SUCCESS_MESSAGES.DELETE('الدورة'));
+                }
+            } else if (type === 'level') {
+                const response = await deleteCourseLevel(id);
+                if (response.data?.success) {
+                    // إعادة جلب مستويات جميع الدورات أو تحديث الحالة المحلية
+                    showSuccessToast(SUCCESS_MESSAGES.DELETE('المستوى'));
+                }
+            } else if (type === 'lesson') {
+                const response = await deleteLesson(id);
+                if (response.data?.success) {
+                    // إعادة جلب الدروس أو تحديث الحالة المحلية
+                    showSuccessToast(SUCCESS_MESSAGES.DELETE('الدرس'));
+                }
             } else {
                 console.log(`Deleting ${type} ${id}`);
                 showSuccessToast(SUCCESS_MESSAGES.DELETE('الاختصاص'));
             }
         } catch (error) {
-            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.DELETE('الاختصاص'));
+            const errorType = type === 'specialization' ? 'الاختصاص' :
+                            type === 'course' ? 'الدورة' :
+                            type === 'level' ? 'المستوى' : 'الدرس';
+            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.DELETE(errorType));
         }
     };
 
@@ -245,13 +394,48 @@ export const useCourseManagement = () => {
                         showSuccessToast(SUCCESS_MESSAGES.TOGGLE('الاختصاص', !spec.isActive));
                     }
                 }
+            } else if (type === 'course') {
+                const course = courses.find(c => c.id === id);
+                if (course) {
+                    const response = await toggleCourseStatus(id, !course.isActive);
+                    if (response.data?.success) {
+                        await fetchCourses();
+                        showSuccessToast(SUCCESS_MESSAGES.TOGGLE('الدورة', !course.isActive));
+                    }
+                }
+            } else if (type === 'level') {
+                const level = Object.values(courseLevels).flat().find(l => l.id === id);
+                if (level) {
+                    const response = await toggleCourseLevelStatus(id, !level.isActive);
+                    if (response.data?.success) {
+                        const courseId = level.courseId;
+                        if (courseId) {
+                            await fetchCourseLevels(courseId);
+                        }
+                        showSuccessToast(SUCCESS_MESSAGES.TOGGLE('المستوى', !level.isActive));
+                    }
+                }
+            } else if (type === 'lesson') {
+                const lesson = Object.values(lessons).flat().find(l => l.id === id);
+                if (lesson) {
+                    const response = await toggleLessonStatus(id, !lesson.isActive);
+                    if (response.data?.success) {
+                        const levelId = lesson.courseLevelId;
+                        if (levelId) {
+                            await fetchLessons(levelId);
+                        }
+                        showSuccessToast(SUCCESS_MESSAGES.TOGGLE('الدرس', !lesson.isActive));
+                    }
+                }
             } else {
                 console.log(`Toggling ${type} ${id} active status`);
-                // Mock implementation for other types
                 showSuccessToast(SUCCESS_MESSAGES.TOGGLE(type, true));
             }
         } catch (error) {
-            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.TOGGLE('الاختصاص'));
+            const errorType = type === 'specialization' ? 'الاختصاص' :
+                            type === 'course' ? 'الدورة' :
+                            type === 'level' ? 'المستوى' : 'الدرس';
+            showErrorToast(error.response?.data?.message || ERROR_MESSAGES.TOGGLE(errorType));
         }
     };
 
@@ -333,6 +517,9 @@ export const useCourseManagement = () => {
         loading,
         error,
         isSubmitting,
-        fetchSpecializations
+        fetchSpecializations,
+        fetchCourses,
+        fetchCourseLevels,
+        fetchLessons
     };
 };

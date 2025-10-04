@@ -1,3 +1,4 @@
+// src\data\countriesPhone.js
 export const countries = [
     { countryCode: "+963", flag: "🇸🇾", countryName: "سوريا" },
     { countryCode: "+966", flag: "🇸🇦", countryName: "السعودية" },

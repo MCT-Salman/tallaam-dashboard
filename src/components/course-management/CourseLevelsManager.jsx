@@ -1,3 +1,4 @@
+// src\components\course-management\CourseLevelsManager.jsx
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,8 @@ const CourseLevelsManager = ({
     getLessons,
     setForm,
     setDialogs,
-    getCourseLevels
+    getCourseLevels,
+    fetchLessons
 }) => {
     const levels = getCourseLevels(course.id);
     
