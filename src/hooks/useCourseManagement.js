@@ -5,6 +5,7 @@ import { getSpecializations, updateSpecialization, deleteSpecialization, toggleS
 import { getCourses, createCourse, updateCourse, deleteCourse, toggleCourseStatus } from '@/api/api';
 import { getCourseLevels, createCourseLevel, updateCourseLevel, deleteCourseLevel, toggleCourseLevelStatus } from '@/api/api';
 import { getCourseLessons, getLevelLessons, createLesson, createLessonForLevel, updateLesson, deleteLesson, toggleLessonStatus } from '@/api/api';
+import { getInstructors, createInstructor, updateInstructor, deleteInstructor, toggleInstructorStatus } from '@/api/api';
 import { showSuccessToast, showErrorToast, SUCCESS_MESSAGES, ERROR_MESSAGES } from './useToastMessages';
 
 export const useCourseManagement = () => {
@@ -24,12 +25,12 @@ export const useCourseManagement = () => {
         try {
             console.log('Fetching specializations from API...');
             const response = await getSpecializations();
-            console.log('Full API response:', response.data);
+            console.log('Specializations API response:', response.data);
 
-            // الطريقة المباشرة بناءً على هيكل البيانات الذي تراه
+            // بناءً على نفس هيكل المدرسين، البيانات في response.data.data.data
             let specializationsData = response.data?.data?.data || [];
 
-            // تأكد أنها مصفوفة
+            // التأكد من أن البيانات مصفوفة
             if (!Array.isArray(specializationsData)) {
                 specializationsData = [];
             }
@@ -46,6 +47,37 @@ export const useCourseManagement = () => {
             setLoading(false);
         }
     };
+
+    // Fetch instructors from API
+    const fetchInstructors = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            console.log('Fetching instructors from API...');
+            const response = await getInstructors();
+            console.log('Instructors API response:', response.data);
+
+            // بناءً على البيانات الفعلية من الكونسول، الهيكل هو response.data.data.data
+            let instructorsData = response.data?.data?.data || [];
+
+            // التأكد من أن البيانات مصفوفة
+            if (!Array.isArray(instructorsData)) {
+                console.warn('Instructors data is not an array:', instructorsData);
+                instructorsData = [];
+            }
+
+            console.log(`Loaded ${instructorsData.length} instructors from API`);
+            setInstructors(instructorsData);
+
+        } catch (err) {
+            console.error('Error fetching instructors:', err);
+            const errorMessage = err.response?.data?.message || 'فشل في جلب المدرسين';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Fetch courses from API
     const fetchCourses = async () => {
         setLoading(true);
@@ -55,12 +87,16 @@ export const useCourseManagement = () => {
             const response = await getCourses();
             console.log('Courses API response:', response.data);
 
-            let coursesData = response.data?.data?.courses || [];
+            // بناءً على البيانات الفعلية من الكونسول، الهيكل هو response.data.data.items
+            let coursesData = response.data?.data?.items || [];
+
+            // التأكد من أن البيانات مصفوفة
             if (!Array.isArray(coursesData)) {
                 coursesData = [];
             }
 
             console.log('Processed courses:', coursesData);
+            console.log('Number of courses loaded:', coursesData.length);
             setCourses(coursesData);
 
         } catch (err) {
@@ -79,10 +115,30 @@ export const useCourseManagement = () => {
             const response = await getCourseLevels(courseId);
             console.log('Course levels response:', response.data);
 
-            let levelsData = response.data?.data || [];
+            // جرب عدة هياكل مختلفة للحصول على البيانات
+            let levelsData = [];
+
+            // الهيكل الأول: response.data.data
+            if (response.data?.data) {
+                levelsData = response.data.data;
+            }
+            // الهيكل الثاني: response.data (مصفوفة مباشرة)
+            else if (Array.isArray(response.data)) {
+                levelsData = response.data;
+            }
+            // الهيكل الثالث: response.data.levels
+            else if (response.data?.levels) {
+                levelsData = response.data.levels;
+            }
+
+            // التأكد من أن البيانات مصفوفة
             if (!Array.isArray(levelsData)) {
+                console.warn('Course levels data is not an array:', levelsData);
                 levelsData = [];
             }
+
+            console.log('Processed course levels:', levelsData);
+            console.log('Number of levels loaded:', levelsData.length);
 
             setCourseLevels(prev => ({
                 ...prev,
@@ -119,13 +175,11 @@ export const useCourseManagement = () => {
     // Load data on component mount
     useEffect(() => {
         fetchSpecializations();
+        fetchInstructors();
         fetchCourses();
     }, []);
 
-    const [instructors, setInstructors] = useState([
-        { id: 1, name: "محمد أحمد", bio: "خبير برمجيات", avatarUrl: "", specializationId: 1, isActive: true },
-        { id: 2, name: "سارة حسن", bio: "مهندسة مدنية", avatarUrl: "", specializationId: 2, isActive: true },
-    ]);
+    const [instructors, setInstructors] = useState([]);
 
     // --- State Management ---
     // تم إزالة حالة التوست القديمة واستبدالها بنظام التوست الجديد
@@ -144,7 +198,7 @@ export const useCourseManagement = () => {
         specialization: { name: '', image: null, imagePreview: null },
         instructor: { name: '', bio: '', avatarUrl: '', specializationId: '' },
         course: { title: '', slug: '', description: '', specializationId: '' },
-        level: { name: '', order: 1, priceUSD: 0, priceSAR: 0, isFree: false, courseId: '', instructorId: '' },
+        level: { title: '', order: 1, courseId: '', instructorId: '' },
         lesson: { title: '', description: '', youtubeUrl: '', googleDriveUrl: '', durationSec: 0, orderIndex: 1, isFreePreview: false, courseLevelId: '' }
     });
 
@@ -233,7 +287,24 @@ export const useCourseManagement = () => {
                     closeDialog(type);
                 }
             } else if (type === 'level') {
-                const response = await createCourseLevel(form[type].courseId, form[type]);
+                // التحقق من اختيار الكورس والمدرس
+                if (!form[type].courseId) {
+                    showErrorToast('يرجى اختيار الدورة أولاً');
+                    return;
+                }
+                if (!form[type].instructorId) {
+                    showErrorToast('يرجى اختيار المدرس');
+                    return;
+                }
+
+                // إرسال البيانات المطلوبة فقط
+                const levelData = {
+                    title: form[type].title,
+                    order: parseInt(form[type].order),
+                    instructorId: parseInt(form[type].instructorId)
+                };
+
+                const response = await createCourseLevel(form[type].courseId, levelData);
                 if (response.data?.success) {
                     await fetchCourseLevels(form[type].courseId);
                     showSuccessToast(SUCCESS_MESSAGES.CREATE('المستوى'));
@@ -306,7 +377,25 @@ export const useCourseManagement = () => {
                     showErrorToast('معرف المستوى غير موجود');
                     return;
                 }
-                const response = await updateCourseLevel(id, form[type]);
+
+                // التحقق من اختيار الكورس والمدرس
+                if (!form[type].courseId) {
+                    showErrorToast('يرجى اختيار الدورة أولاً');
+                    return;
+                }
+                if (!form[type].instructorId) {
+                    showErrorToast('يرجى اختيار المدرس');
+                    return;
+                }
+
+                // إرسال البيانات المطلوبة فقط
+                const levelData = {
+                    title: form[type].title,
+                    order: parseInt(form[type].order),
+                    instructorId: parseInt(form[type].instructorId)
+                };
+
+                const response = await updateCourseLevel(id, levelData);
                 if (response.data?.success) {
                     const courseId = form[type].courseId;
                     if (courseId) {
@@ -518,6 +607,7 @@ export const useCourseManagement = () => {
         error,
         isSubmitting,
         fetchSpecializations,
+        fetchInstructors,
         fetchCourses,
         fetchCourseLevels,
         fetchLessons

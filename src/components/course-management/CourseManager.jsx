@@ -26,6 +26,7 @@ const CourseManager = ({
     toggleLevelExpansion,
     handleToggleActive,
     handleDelete,
+    openEditDialog,
     getSpecializationName,
     getCourseLevels,
     getInstructorName,

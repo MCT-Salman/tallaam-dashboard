@@ -166,15 +166,6 @@ const EditDialogs = ({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="edit-course-slug">الرابط المختصر (Slug)</Label>
-                            <Input 
-                                id="edit-course-slug"
-                                placeholder="الرابط المختصر (Slug)" 
-                                value={form.course.slug || ''} 
-                                onChange={(e) => handleFormChange('course', 'slug', e.target.value)} 
-                            />
-                        </div>
-                        <div className="space-y-2">
                             <Label htmlFor="edit-course-description">وصف الدورة</Label>
                             <Textarea 
                                 id="edit-course-description"
@@ -211,26 +202,12 @@ const EditDialogs = ({
                     <DialogHeader><DialogTitle>تعديل المستوى</DialogTitle><DialogDescription>تعديل بيانات المستوى</DialogDescription></DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit-level-course">الدورة</Label>
-                            <Select 
-                                value={form.level.courseId?.toString() || ''} 
-                                onValueChange={(v) => handleFormChange('level', 'courseId', v)}
-                            >
-                                <SelectTrigger><SelectValue placeholder="اختر الدورة" /></SelectTrigger>
-                                <SelectContent>
-                                    {courses.map(c => (
-                                        <SelectItem key={c.id} value={c.id.toString()}>{c.title}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-level-name">اسم المستوى</Label>
+                            <Label htmlFor="edit-level-name">عنوان المستوى</Label>
                             <Input 
                                 id="edit-level-name"
-                                placeholder="اسم المستوى" 
-                                value={form.level.name || ''} 
-                                onChange={(e) => handleFormChange('level', 'name', e.target.value)} 
+                                placeholder="عنوان المستوى" 
+                                value={form.level.title || ''} 
+                                onChange={(e) => handleFormChange('level', 'title', e.target.value)} 
                             />
                         </div>
                         <div className="space-y-2">
@@ -243,38 +220,6 @@ const EditDialogs = ({
                                 onChange={(e) => handleFormChange('level', 'order', e.target.value)}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-level-price-usd">السعر بالدولار</Label>
-                                <Input
-                                    id="edit-level-price-usd"
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="السعر بالدولار"
-                                    value={form.level.priceUSD || ''}
-                                    onChange={(e) => handleFormChange('level', 'priceUSD', e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-level-price-sar">السعر بالريال</Label>
-                                <Input
-                                    id="edit-level-price-sar"
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="السعر بالريال"
-                                    value={form.level.priceSAR || ''}
-                                    onChange={(e) => handleFormChange('level', 'priceSAR', e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="edit-level-free"
-                                checked={form.level.isFree || false}
-                                onCheckedChange={(checked) => handleFormChange('level', 'isFree', checked)}
-                            />
-                            <Label htmlFor="edit-level-free">مجاني</Label>
-                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-level-instructor">المدرس</Label>
                             <Select 
@@ -283,9 +228,15 @@ const EditDialogs = ({
                             >
                                 <SelectTrigger><SelectValue placeholder="اختر المدرس" /></SelectTrigger>
                                 <SelectContent>
-                                    {instructors.map(i => (
-                                        <SelectItem key={i.id} value={i.id.toString()}>{i.name}</SelectItem>
-                                    ))}
+                                    {Array.isArray(instructors) && instructors.length > 0 ? (
+                                        instructors.map(i => (
+                                            <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <div className="p-2 text-sm text-muted-foreground text-center">
+                                            لا يوجد مدرسون متاحون
+                                        </div>
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -299,22 +250,6 @@ const EditDialogs = ({
                 <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>تعديل الدرس</DialogTitle><DialogDescription>تعديل بيانات الدرس</DialogDescription></DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-lesson-level">المستوى</Label>
-                            <Select 
-                                value={form.lesson.courseLevelId?.toString() || ''} 
-                                onValueChange={(v) => handleFormChange('lesson', 'courseLevelId', v)}
-                            >
-                                <SelectTrigger><SelectValue placeholder="اختر المستوى" /></SelectTrigger>
-                                <SelectContent>
-                                    {courseLevels.map(l => (
-                                        <SelectItem key={l.id} value={l.id.toString()}>
-                                            {getCourseName(l.courseId)} - {l.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-lesson-title">عنوان الدرس</Label>
                             <Input 
@@ -349,15 +284,6 @@ const EditDialogs = ({
                                 placeholder="معرف يوتيوب (YouTube ID)"
                                 value={form.lesson.youtubeId || ''}
                                 onChange={(e) => handleFormChange('lesson', 'youtubeId', e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-lesson-drive-url">رابط جوجل درايف</Label>
-                            <Input
-                                id="edit-lesson-drive-url"
-                                placeholder="رابط جوجل درايف"
-                                value={form.lesson.googleDriveUrl || ''}
-                                onChange={(e) => handleFormChange('lesson', 'googleDriveUrl', e.target.value)}
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-2">

@@ -118,6 +118,7 @@ export default function EnhancedCourseManagement() {
                         handleAdd={handleAdd}
                         handleToggleActive={handleToggleActive}
                         handleDelete={handleDelete}
+                        openEditDialog={openEditDialog}
                         getSpecializationName={getSpecializationName}
                         getInstructorName={getInstructorName}
                         getCourseName={getCourseName}

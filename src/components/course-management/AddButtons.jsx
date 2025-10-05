@@ -9,18 +9,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus } from "lucide-react";
 
-const AddButtons = ({ 
-    form, 
-    handleFormChange, 
-    handleAdd, 
-    specializations, 
-    instructors, 
-    courses, 
+const AddButtons = ({
+    form,
+    handleFormChange,
+    handleAdd,
+    specializations,
+    instructors,
+    courses,
     courseLevels,
-    getCourseName 
+    getCourseName
 }) => {
     // Ensure specializations is always an array
     const specializationsArray = Array.isArray(specializations) ? specializations : [];
+
+    // Ensure instructors is always an array
+    const instructorsArray = Array.isArray(instructors) ? instructors : [];
+
     return (
         <div className="flex gap-2">
             {/* Add Course Button */}
@@ -44,15 +48,6 @@ const AddButtons = ({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="course-slug">الرابط المختصر (Slug)</Label>
-                            <Input
-                                id="course-slug"
-                                placeholder="الرابط المختصر (Slug)"
-                                value={form.course.slug || ''}
-                                onChange={(e) => handleFormChange('course', 'slug', e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
                             <Label htmlFor="course-description">وصف الدورة</Label>
                             <Textarea
                                 id="course-description"
@@ -63,8 +58,8 @@ const AddButtons = ({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="course-specialization">الاختصاص</Label>
-                            <Select 
-                                value={form.course.specializationId || ''} 
+                            <Select
+                                value={form.course.specializationId || ''}
                                 onValueChange={(v) => handleFormChange('course', 'specializationId', v)}
                             >
                                 <SelectTrigger><SelectValue placeholder="اختر الاختصاص" /></SelectTrigger>
@@ -95,26 +90,12 @@ const AddButtons = ({
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="level-course">الدورة</Label>
-                            <Select
-                                value={form.level.courseId || ''}
-                                onValueChange={(v) => handleFormChange('level', 'courseId', v)}
-                            >
-                                <SelectTrigger><SelectValue placeholder="اختر الدورة" /></SelectTrigger>
-                                <SelectContent>
-                                    {courses.map(c => (
-                                        <SelectItem key={c.id} value={c.id.toString()}>{c.title}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="level-name">اسم المستوى</Label>
+                            <Label htmlFor="level-name">عنوان المستوى</Label>
                             <Input
                                 id="level-name"
-                                placeholder="اسم المستوى"
-                                value={form.level.name || ''}
-                                onChange={(e) => handleFormChange('level', 'name', e.target.value)}
+                                placeholder="عنوان المستوى"
+                                value={form.level.title || ''}
+                                onChange={(e) => handleFormChange('level', 'title', e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
@@ -127,37 +108,25 @@ const AddButtons = ({
                                 onChange={(e) => handleFormChange('level', 'order', e.target.value)}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="level-price-usd">السعر بالدولار</Label>
-                                <Input
-                                    id="level-price-usd"
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="السعر بالدولار"
-                                    value={form.level.priceUSD || ''}
-                                    onChange={(e) => handleFormChange('level', 'priceUSD', e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="level-price-sar">السعر بالريال</Label>
-                                <Input
-                                    id="level-price-sar"
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="السعر بالريال"
-                                    value={form.level.priceSAR || ''}
-                                    onChange={(e) => handleFormChange('level', 'priceSAR', e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="level-free"
-                                checked={form.level.isFree || false}
-                                onCheckedChange={(checked) => handleFormChange('level', 'isFree', checked)}
-                            />
-                            <Label htmlFor="level-free">مجاني</Label>
+                        <div className="space-y-2">
+                            <Label htmlFor="level-course">الدورة</Label>
+                            <Select
+                                value={form.level.courseId || ''}
+                                onValueChange={(v) => handleFormChange('level', 'courseId', v)}
+                            >
+                                <SelectTrigger><SelectValue placeholder="اختر الدورة" /></SelectTrigger>
+                                <SelectContent>
+                                    {courses.length > 0 ? (
+                                        courses.map(c => (
+                                            <SelectItem key={c.id} value={c.id.toString()}>{c.title}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <div className="p-2 text-sm text-muted-foreground text-center">
+                                            لا توجد دورات متاحة
+                                        </div>
+                                    )}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="level-instructor">المدرس</Label>
@@ -167,9 +136,15 @@ const AddButtons = ({
                             >
                                 <SelectTrigger><SelectValue placeholder="اختر المدرس" /></SelectTrigger>
                                 <SelectContent>
-                                    {instructors.map(i => (
-                                        <SelectItem key={i.id} value={i.id.toString()}>{i.name}</SelectItem>
-                                    ))}
+                                    {instructorsArray.length > 0 ? (
+                                        instructorsArray.map(i => (
+                                            <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <div className="p-2 text-sm text-muted-foreground text-center">
+                                            لا يوجد مدرسون متاحون
+                                        </div>
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -184,24 +159,11 @@ const AddButtons = ({
                     <Button variant="outline"><Plus className="w-4 h-4 ml-2" /> إضافة درس</Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>إضافة درس جديد</DialogTitle><DialogDescription>أدخل بيانات الدرس الجديد</DialogDescription></DialogHeader>
+                    <DialogHeader>
+                        <DialogTitle>إضافة درس جديد</DialogTitle>
+                        <DialogDescription>أدخل بيانات الدرس الجديد</DialogDescription>
+                    </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="lesson-level">المستوى</Label>
-                            <Select
-                                value={form.lesson.courseLevelId || ''}
-                                onValueChange={(v) => handleFormChange('lesson', 'courseLevelId', v)}
-                            >
-                                <SelectTrigger><SelectValue placeholder="اختر المستوى" /></SelectTrigger>
-                                <SelectContent>
-                                    {courseLevels.map(l => (
-                                        <SelectItem key={l.id} value={l.id.toString()}>
-                                            {getCourseName(l.courseId)} - {l.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="lesson-title">عنوان الدرس</Label>
                             <Input
@@ -230,52 +192,14 @@ const AddButtons = ({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="lesson-youtube-id">معرف يوتيوب (YouTube ID)</Label>
+                            <Label htmlFor="lesson-order">الترتيب</Label>
                             <Input
-                                id="lesson-youtube-id"
-                                placeholder="معرف يوتيوب (YouTube ID)"
-                                value={form.lesson.youtubeId || ''}
-                                onChange={(e) => handleFormChange('lesson', 'youtubeId', e.target.value)}
+                                id="lesson-order"
+                                type="number"
+                                placeholder="الترتيب"
+                                value={form.lesson.orderIndex || ''}
+                                onChange={(e) => handleFormChange('lesson', 'orderIndex', e.target.value)}
                             />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="lesson-drive-url">رابط جوجل درايف</Label>
-                            <Input
-                                id="lesson-drive-url"
-                                placeholder="رابط جوجل درايف"
-                                value={form.lesson.googleDriveUrl || ''}
-                                onChange={(e) => handleFormChange('lesson', 'googleDriveUrl', e.target.value)}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="lesson-duration">المدة بالثواني</Label>
-                                <Input
-                                    id="lesson-duration"
-                                    type="number"
-                                    placeholder="المدة بالثواني"
-                                    value={form.lesson.durationSec || ''}
-                                    onChange={(e) => handleFormChange('lesson', 'durationSec', e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="lesson-order">الترتيب</Label>
-                                <Input
-                                    id="lesson-order"
-                                    type="number"
-                                    placeholder="الترتيب"
-                                    value={form.lesson.orderIndex || ''}
-                                    onChange={(e) => handleFormChange('lesson', 'orderIndex', e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="lesson-preview"
-                                checked={form.lesson.isFreePreview || false}
-                                onCheckedChange={(checked) => handleFormChange('lesson', 'isFreePreview', checked)}
-                            />
-                            <Label htmlFor="lesson-preview">معاينة مجانية</Label>
                         </div>
                         <Button onClick={() => handleAdd('lesson')}>إضافة الدرس</Button>
                     </div>
